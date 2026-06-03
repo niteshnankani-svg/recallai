@@ -138,17 +138,20 @@ async def get_ai_response(
     book_future = loop.run_in_executor(
         _executor, retrieve_relevant_passages, transcript, 2
     )
-    if not memory_context:
-        memory_future = loop.run_in_executor(
-            _executor, retrieve_user_memories, user_name, transcript
-        )
-    else:
-        memory_future = None
+    memory_future = (
+        loop.run_in_executor(_executor, retrieve_user_memories, user_name, transcript)
+        if not memory_context else None
+    )
 
-    emotion_data, book_context = await asyncio.gather(emotion_future, book_future)
-
+    futures = [emotion_future, book_future]
     if memory_future:
-        memory_context = await memory_future
+        futures.append(memory_future)
+
+    results = await asyncio.gather(*futures)
+    emotion_data = results[0]
+    book_context = results[1]
+    if memory_future:
+        memory_context = results[2]
 
     arc = get_arc(call_sid)
     arc.record_exchange(
@@ -173,9 +176,7 @@ async def get_ai_response(
     messages.extend(history)
     messages.append(HumanMessage(content=transcript))
 
-    response = await loop.run_in_executor(
-        None, _llm.invoke, messages
-    )
+    response = await _llm.ainvoke(messages)
     ai_text = response.content.strip()
 
     history.append(HumanMessage(content=transcript))
