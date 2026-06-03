@@ -1,0 +1,69 @@
+import asyncio
+import os
+from dotenv import load_dotenv
+load_dotenv()
+
+from deepgram import DeepgramClient, LiveTranscriptionEvents, LiveOptions
+
+DEEPGRAM_API_KEY = os.getenv("DEEPGRAM_API_KEY")
+
+
+async def transcribe_stream(audio_queue: asyncio.Queue, transcript_callback, ready_event=None) -> None:
+    deepgram = DeepgramClient(DEEPGRAM_API_KEY)
+    connection = deepgram.listen.asynclive.v("1")
+
+    async def on_transcript(self, result, **kwargs):
+        try:
+            transcript = result.channel.alternatives[0].transcript
+            is_final = result.is_final
+            if transcript.strip() and is_final:
+                print(f"[Deepgram] ✓ {transcript}")
+                await transcript_callback(transcript)
+        except Exception as e:
+            print(f"[Deepgram] Parse error: {e}")
+
+    async def on_open(self, open, **kwargs):
+        print(f"[Deepgram] Connection opened ✓")
+        if ready_event:
+            ready_event.set()
+
+    async def on_error(self, error, **kwargs):
+        pass
+
+    async def on_close(self, close, **kwargs):
+        print(f"[Deepgram] Connection closed")
+
+    connection.on(LiveTranscriptionEvents.Transcript, on_transcript)
+    connection.on(LiveTranscriptionEvents.Open, on_open)
+    connection.on(LiveTranscriptionEvents.Error, on_error)
+    connection.on(LiveTranscriptionEvents.Close, on_close)
+
+    options = LiveOptions(
+        model="nova-3",
+        language="multi",
+        encoding="mulaw",
+        sample_rate=8000,
+        channels=1,
+        interim_results=True,
+        endpointing=200,
+        smart_format=True,
+    )
+
+    started = await connection.start(options)
+    print(f"[Deepgram] Started: {started} (nova-3 multilingual)")
+
+    while True:
+        chunk = await audio_queue.get()
+        if chunk is None:
+            break
+        try:
+            await connection.send(chunk)
+        except Exception:
+            pass
+
+    try:
+        await connection.finish()
+    except Exception:
+        pass
+
+    print("[Deepgram] Session closed")
