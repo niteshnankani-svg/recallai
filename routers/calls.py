@@ -10,29 +10,12 @@ from fastapi.responses import Response
 from twilio.twiml.voice_response import VoiceResponse, Connect, Stream
 
 from services.deepgram_service import transcribe_stream
-from services.elevenlabs_service import synthesize_speech
-from services.language_detector import detect_language
+from services.language_detector import detect_language, clear_session_language
 from services.agent_service import get_ai_response, clear_call_history
+from services.tts_stream import stream_response_audio
 
 router = APIRouter(prefix="/calls", tags=["calls"])
 BASE_URL = os.getenv("BASE_URL")
-
-FRAME_SIZE = 160
-FRAME_DELAY = 0.02
-
-
-async def send_audio_in_frames(websocket, stream_sid, audio_bytes):
-    for i in range(0, len(audio_bytes), FRAME_SIZE):
-        frame = audio_bytes[i:i + FRAME_SIZE]
-        if len(frame) < FRAME_SIZE:
-            frame = frame + b'\xff' * (FRAME_SIZE - len(frame))
-        frame_b64 = base64.b64encode(frame).decode("utf-8")
-        await websocket.send_json({
-            "event": "media",
-            "streamSid": stream_sid,
-            "media": {"payload": frame_b64},
-        })
-        await asyncio.sleep(FRAME_DELAY)
 
 
 @router.post("/webhook")
@@ -57,6 +40,7 @@ async def call_status(request: Request):
     print(f"[Status] Call {call_sid} → {status}")
     if status == "completed":
         clear_call_history(call_sid, user_name="Nitesh")
+        clear_session_language(call_sid)
     return Response(status_code=200)
 
 
@@ -77,19 +61,16 @@ async def media_stream(websocket: WebSocket):
         print(f"[RecallAI] User said: {transcript}")
         is_speaking.set()
         try:
-            # Detect once, use everywhere
-            lang = detect_language(transcript)
+            lang = detect_language(transcript, call_sid=call_sid)
 
-            ai_response = get_ai_response(
+            ai_response = await get_ai_response(
                 transcript=transcript,
                 call_sid=call_sid or "unknown",
                 user_name="Nitesh",
-                detected_language=lang,
             )
             print(f"[RecallAI] AI says ({lang}): {ai_response}")
 
-            audio_bytes = await synthesize_speech(ai_response, lang=lang)
-            await send_audio_in_frames(websocket, stream_sid, audio_bytes)
+            await stream_response_audio(ai_response, stream_sid, websocket, lang=lang)
 
         finally:
             is_speaking.clear()
@@ -115,8 +96,7 @@ async def media_stream(websocket: WebSocket):
                 call_sid = data["start"].get("callSid", "unknown")
                 print(f"[WebSocket] Stream started → {stream_sid}")
                 opening = "Hi there, this is RecallAI calling to check in on you. How are you feeling today?"
-                audio_bytes = await synthesize_speech(opening, lang="en")
-                await send_audio_in_frames(websocket, stream_sid, audio_bytes)
+                await stream_response_audio(opening, stream_sid, websocket, lang="en")
 
             elif event_type == "media":
                 audio_bytes = base64.b64decode(data["media"]["payload"])
@@ -132,4 +112,6 @@ async def media_stream(websocket: WebSocket):
     finally:
         await audio_queue.put(None)
         await transcription_task
+        if call_sid:
+            clear_session_language(call_sid)
         print("[WebSocket] Cleanup complete")

@@ -1,4 +1,6 @@
+import asyncio
 import os
+from concurrent.futures import ThreadPoolExecutor
 from dotenv import load_dotenv
 load_dotenv()
 
@@ -11,6 +13,15 @@ from memory.extractor import extract_and_store_memories
 from services.conversation_arc import get_arc, clear_arc
 
 ANTHROPIC_API_KEY = os.getenv("ANTHROPIC_API_KEY")
+
+_llm = ChatAnthropic(
+    model="claude-sonnet-4-5",
+    api_key=ANTHROPIC_API_KEY,
+    temperature=0.8,
+    max_tokens=90,
+)
+
+_executor = ThreadPoolExecutor(max_workers=3)
 
 BASE_SYSTEM_PROMPT = """
 You are RecallAI — a warm, skilled wellness companion trained in the techniques
@@ -115,30 +126,35 @@ RELEVANT THERAPY BOOK PASSAGES (let these inform your technique; never quote dir
 _call_histories: dict[str, list] = {}
 
 
-def get_ai_response(
+async def get_ai_response(
     transcript: str,
     call_sid: str,
     user_name: str,
     memory_context: str = "",
 ) -> str:
-    emotion_data = detect_emotion(transcript)
+    loop = asyncio.get_event_loop()
+
+    emotion_future = loop.run_in_executor(_executor, detect_emotion, transcript)
+    book_future = loop.run_in_executor(
+        _executor, retrieve_relevant_passages, transcript, 2
+    )
+    if not memory_context:
+        memory_future = loop.run_in_executor(
+            _executor, retrieve_user_memories, user_name, transcript
+        )
+    else:
+        memory_future = None
+
+    emotion_data, book_context = await asyncio.gather(emotion_future, book_future)
+
+    if memory_future:
+        memory_context = await memory_future
 
     arc = get_arc(call_sid)
     arc.record_exchange(
         emotion=emotion_data["wellness_category"],
         user_text=transcript,
     )
-
-    book_context = retrieve_relevant_passages(
-        query=transcript,
-        n_results=2,
-    )
-
-    if not memory_context:
-        memory_context = retrieve_user_memories(
-            user_name=user_name,
-            current_topic=transcript,
-        )
 
     system_prompt = _build_system_prompt(
         emotion_data=emotion_data,
@@ -157,14 +173,9 @@ def get_ai_response(
     messages.extend(history)
     messages.append(HumanMessage(content=transcript))
 
-    llm = ChatAnthropic(
-        model="claude-sonnet-4-5",
-        api_key=ANTHROPIC_API_KEY,
-        temperature=0.8,
-        max_tokens=90,
+    response = await loop.run_in_executor(
+        None, _llm.invoke, messages
     )
-
-    response = llm.invoke(messages)
     ai_text = response.content.strip()
 
     history.append(HumanMessage(content=transcript))
