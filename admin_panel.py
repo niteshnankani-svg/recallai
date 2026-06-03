@@ -1,6 +1,7 @@
 import os
 import gradio as gr
 import chromadb
+from services.call_registry import set_user_name, get_all_user_names
 
 
 def trigger_call(phone_number: str) -> str:
@@ -36,22 +37,23 @@ def refresh_memories():
         try:
             collection = client.get_collection("user_memories")
         except Exception:
-            return [["—", "No memories stored yet."]]
+            return [["—", "—", "No memories stored yet."]]
 
         result = collection.get(include=["documents", "metadatas"])
 
         if not result["documents"]:
-            return [["—", "No memories stored yet."]]
+            return [["—", "—", "No memories stored yet."]]
 
         rows = []
         for doc, meta in zip(result["documents"], result["metadatas"]):
             date = meta.get("timestamp", "")[:10] if meta else "—"
-            rows.append([date, doc])
+            user = meta.get("user", "—") if meta else "—"
+            rows.append([date, user, doc])
 
         rows.sort(key=lambda r: r[0], reverse=True)
         return rows
     except Exception as e:
-        return [["Error", str(e)]]
+        return [["Error", "—", str(e)]]
 
 
 def check_status():
@@ -67,6 +69,20 @@ def check_status():
         status = "✅" if os.environ.get(key) else "❌"
         lines.append(f"{status}  {key}")
     return "\n".join(lines)
+
+
+def save_user(phone: str, name: str) -> str:
+    if not phone.strip() or not name.strip():
+        return "Both phone number and name are required."
+    set_user_name(phone.strip(), name.strip())
+    return f"Saved: {phone.strip()} → {name.strip()}"
+
+
+def list_users():
+    names = get_all_user_names()
+    if not names:
+        return [["—", "No users registered yet."]]
+    return [[phone, name] for phone, name in names.items()]
 
 
 with gr.Blocks(theme=gr.themes.Soft(), title="RecallAI Admin") as demo:
@@ -85,11 +101,29 @@ with gr.Blocks(theme=gr.themes.Soft(), title="RecallAI Admin") as demo:
         )
         call_btn.click(fn=trigger_call, inputs=phone_input, outputs=call_result)
 
+    with gr.Tab("Users"):
+        gr.Markdown("Map phone numbers to display names. Unknown callers show their phone number.")
+        with gr.Row():
+            user_phone = gr.Textbox(label="Phone Number", placeholder="+1234567890")
+            user_name_input = gr.Textbox(label="Display Name", placeholder="e.g. Nitesh")
+        save_btn = gr.Button("Save User", variant="primary")
+        save_result = gr.Textbox(label="Result", interactive=False)
+        save_btn.click(fn=save_user, inputs=[user_phone, user_name_input], outputs=save_result)
+
+        gr.Markdown("### Registered Users")
+        list_btn = gr.Button("Refresh", variant="secondary")
+        user_table = gr.Dataframe(
+            headers=["Phone", "Name"],
+            datatype=["str", "str"],
+            interactive=False,
+        )
+        list_btn.click(fn=list_users, inputs=None, outputs=user_table)
+
     with gr.Tab("Stored Memories"):
         refresh_btn = gr.Button("Refresh Memories", variant="secondary")
         memory_table = gr.Dataframe(
-            headers=["Date", "Memory Fact"],
-            datatype=["str", "str"],
+            headers=["Date", "User", "Memory Fact"],
+            datatype=["str", "str", "str"],
             interactive=False,
         )
         refresh_btn.click(fn=refresh_memories, inputs=None, outputs=memory_table)
