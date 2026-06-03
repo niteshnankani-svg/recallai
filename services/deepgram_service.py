@@ -33,10 +33,14 @@ async def transcribe_stream(audio_queue: asyncio.Queue, transcript_callback, rea
     async def on_close(self, close, **kwargs):
         print(f"[Deepgram] Connection closed")
 
+    async def on_utterance_end(self, utterance_end, **kwargs):
+        print(f"[Deepgram] Utterance end detected")
+
     connection.on(LiveTranscriptionEvents.Transcript, on_transcript)
     connection.on(LiveTranscriptionEvents.Open, on_open)
     connection.on(LiveTranscriptionEvents.Error, on_error)
     connection.on(LiveTranscriptionEvents.Close, on_close)
+    connection.on(LiveTranscriptionEvents.UtteranceEnd, on_utterance_end)
 
     options = LiveOptions(
         model="nova-3",
@@ -45,8 +49,11 @@ async def transcribe_stream(audio_queue: asyncio.Queue, transcript_callback, rea
         sample_rate=8000,
         channels=1,
         interim_results=True,
-        endpointing=200,
+        endpointing=250,
+        utterance_end_ms=1200,
         smart_format=True,
+        punctuate=True,
+        filler_words=True,
     )
 
     started = await connection.start(options)

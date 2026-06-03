@@ -24,7 +24,6 @@ async def call_webhook(request: Request):
     call_sid = form.get("CallSid", "unknown")
     print(f"[Webhook] Call answered → SID: {call_sid}")
     response = VoiceResponse()
-    response.pause(length=1)
     connect = Connect()
     stream = Stream(url=f"wss://{request.headers['host']}/calls/stream")
     connect.append(stream)
@@ -95,8 +94,10 @@ async def media_stream(websocket: WebSocket):
                 stream_sid = data["start"]["streamSid"]
                 call_sid = data["start"].get("callSid", "unknown")
                 print(f"[WebSocket] Stream started → {stream_sid}")
+                is_speaking.set()
                 opening = "Hi there, this is RecallAI calling to check in on you. How are you feeling today?"
                 await stream_response_audio(opening, stream_sid, websocket, lang="en")
+                is_speaking.clear()
 
             elif event_type == "media":
                 audio_bytes = base64.b64decode(data["media"]["payload"])

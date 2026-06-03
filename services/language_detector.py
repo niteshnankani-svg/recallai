@@ -14,6 +14,12 @@ HINDI_ONLY_WORDS = {
     "mera", "meri", "tera", "teri", "uska", "uski",
     "haan", "naa", "dekho", "suno", "bolo", "batao",
     "karke", "karna", "karte", "karti", "karenge",
+    "achha", "sochta", "sochti", "sochte", "chahiye",
+    "wala", "wali", "wale", "isliye", "kyunki",
+    "mushkil", "takleef", "fikar", "tension",
+    "baat", "batana", "sunna", "dekhna",
+    "hogaya", "hogayi", "hoga", "hogi",
+    "aaj", "kal", "subah", "raat", "shaam",
 }
 
 AMBIGUOUS_WORDS = {"main", "par", "kam", "wo", "na", "kuch"}
@@ -61,7 +67,7 @@ def detect_language(text: str, call_sid: str | None = None) -> str:
 
     hindi_ratio = hindi_count / total
 
-    if hindi_count >= 2 or (hindi_count >= 1 and hindi_ratio >= 0.3):
+    if hindi_count >= 2 or (hindi_count >= 1 and (hindi_ratio >= 0.3 or total <= 3)):
         lang = "hi"
         if call_sid:
             set_session_language(call_sid, lang)
