@@ -3,6 +3,9 @@ Streaming TTS — sends audio to Twilio as it arrives from ElevenLabs.
 Two modes:
   1. stream_response_audio: full streaming — pipes ElevenLabs chunks directly
   2. stream_sentences: sentence-by-sentence fallback
+
+Supports barge-in: pass an asyncio.Event as `interrupted` — when set,
+streaming stops immediately and Twilio's audio buffer is cleared.
 """
 import asyncio
 import base64
@@ -17,18 +20,42 @@ def split_into_sentences(text: str) -> list[str]:
     return [s.strip() for s in sentences if s.strip()]
 
 
+async def _clear_twilio_audio(stream_sid: str, websocket):
+    """Send a clear message to flush Twilio's audio buffer."""
+    try:
+        await websocket.send_json({
+            "event": "clear",
+            "streamSid": stream_sid,
+        })
+        print(f"[TTS Stream] Cleared Twilio audio buffer")
+    except Exception as e:
+        print(f"[TTS Stream] Clear error: {e}")
+
+
 async def stream_response_audio(
     ai_text: str,
     stream_sid: str,
     websocket,
     lang: str = "en",
-) -> None:
-    """Stream audio directly from ElevenLabs to Twilio as chunks arrive."""
+    interrupted: asyncio.Event | None = None,
+) -> bool:
+    """Stream audio directly from ElevenLabs to Twilio as chunks arrive.
+    Returns True if completed, False if interrupted."""
     print(f"[TTS Stream] Streaming: '{ai_text[:50]}...' ({lang})")
 
     try:
         async for chunk in synthesize_speech_stream(ai_text, lang=lang):
+            if interrupted and interrupted.is_set():
+                print(f"[TTS Stream] Interrupted — stopping")
+                await _clear_twilio_audio(stream_sid, websocket)
+                return False
+
             for i in range(0, len(chunk), FRAME_SIZE):
+                if interrupted and interrupted.is_set():
+                    print(f"[TTS Stream] Interrupted mid-chunk — stopping")
+                    await _clear_twilio_audio(stream_sid, websocket)
+                    return False
+
                 frame = chunk[i:i + FRAME_SIZE]
                 if len(frame) < FRAME_SIZE:
                     frame = frame + b'\xff' * (FRAME_SIZE - len(frame))
@@ -39,9 +66,10 @@ async def stream_response_audio(
                     "media": {"payload": frame_b64},
                 })
         print(f"[TTS Stream] Done streaming")
+        return True
     except Exception as e:
         print(f"[TTS Stream] Stream error, falling back to sentence mode: {e}")
-        await stream_sentences(ai_text, stream_sid, websocket, lang)
+        return await stream_sentences(ai_text, stream_sid, websocket, lang, interrupted)
 
 
 async def stream_sentences(
@@ -49,18 +77,29 @@ async def stream_sentences(
     stream_sid: str,
     websocket,
     lang: str = "en",
-) -> None:
-    """Fallback: synthesize and send sentence by sentence."""
+    interrupted: asyncio.Event | None = None,
+) -> bool:
+    """Fallback: synthesize and send sentence by sentence.
+    Returns True if completed, False if interrupted."""
     sentences = split_into_sentences(ai_text)
     if not sentences:
-        return
+        return True
 
     print(f"[TTS Stream] {len(sentences)} sentences to synthesize")
 
     for i, sentence in enumerate(sentences):
+        if interrupted and interrupted.is_set():
+            print(f"[TTS Stream] Interrupted before sentence {i+1}")
+            await _clear_twilio_audio(stream_sid, websocket)
+            return False
+
         try:
             audio_bytes = await synthesize_speech(sentence, lang=lang)
             for j in range(0, len(audio_bytes), FRAME_SIZE):
+                if interrupted and interrupted.is_set():
+                    await _clear_twilio_audio(stream_sid, websocket)
+                    return False
+
                 frame = audio_bytes[j:j + FRAME_SIZE]
                 if len(frame) < FRAME_SIZE:
                     frame = frame + b'\xff' * (FRAME_SIZE - len(frame))
@@ -73,3 +112,4 @@ async def stream_sentences(
             print(f"[TTS Stream] Sent sentence {i+1}/{len(sentences)}")
         except Exception as e:
             print(f"[TTS Stream] Error on sentence {i+1}: {e}")
+    return True
