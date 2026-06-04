@@ -17,7 +17,7 @@ def _get_client() -> httpx.AsyncClient:
 def _add_pauses(text: str) -> str:
     """Insert natural pauses to slow down speech and make it human-like."""
     # Add a longer pause after sentence-ending punctuation
-    text = re.sub(r'([.!?।])\s+', r'\1 ... ... ', text)
+    text = re.sub(r'([.!?।])\s+', r'\1 ... ', text)
     return text
 
 
@@ -50,7 +50,7 @@ async def synthesize_speech(text: str, lang: str = "en") -> bytes:
             "style": 0.45,
             "use_speaker_boost": True,
         },
-        "speed": 0.78,
+        "speed": 0.90,
     }
 
     client = _get_client()
@@ -91,7 +91,7 @@ async def synthesize_speech_stream(text: str, lang: str = "en"):
             "style": 0.45,
             "use_speaker_boost": True,
         },
-        "speed": 0.78,
+        "speed": 0.90,
     }
 
     client = _get_client()
