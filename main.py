@@ -1,8 +1,9 @@
 import os
 import secrets
+import base64
 from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import Response
+from fastapi.responses import Response, RedirectResponse
 import gradio as gr
 from routers.calls import router as calls_router
 from admin_panel import demo as admin_demo
@@ -20,24 +21,35 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# --- Basic Auth middleware for /admin ---
+# --- Auth + Gradio queue fix middleware ---
 ADMIN_USER = os.getenv("ADMIN_USER", "admin")
 ADMIN_PASS = os.getenv("ADMIN_PASS", "")
 
+# Gradio internal paths that must bypass auth
+_GRADIO_INTERNAL = ("/admin/queue/", "/admin/api/", "/admin/upload", "/admin/file=",
+                    "/admin/assets/")
 
-# Paths that Gradio uses internally — must bypass auth
-_GRADIO_INTERNAL = ("/admin/queue/", "/admin/api/", "/admin/upload", "/admin/file=")
+# Gradio sends queue/api requests to root — rewrite to /admin prefix
+_GRADIO_REWRITE = ("/queue/", "/api/predict", "/api/queue")
 
 
 @app.middleware("http")
-async def admin_auth_middleware(request: Request, call_next):
+async def gradio_rewrite_and_auth(request: Request, call_next):
     path = request.url.path
+
+    # Rewrite root-level Gradio requests to /admin prefix
+    if any(path.startswith(p) for p in _GRADIO_REWRITE):
+        new_path = f"/admin{path}"
+        scope = request.scope
+        scope["path"] = new_path
+        scope["raw_path"] = new_path.encode()
+        return await call_next(request)
+
+    # Auth for /admin pages (skip Gradio internal paths)
     if path.startswith("/admin") and ADMIN_PASS:
-        # Let Gradio's internal API/queue requests through (browser already authenticated)
         if any(path.startswith(p) for p in _GRADIO_INTERNAL):
             return await call_next(request)
 
-        import base64
         auth = request.headers.get("Authorization", "")
         if not auth.startswith("Basic "):
             return Response(
@@ -57,25 +69,12 @@ async def admin_auth_middleware(request: Request, call_next):
                 headers={"WWW-Authenticate": 'Basic realm="RecallAI Admin"'},
                 content="Invalid credentials",
             )
+
     return await call_next(request)
 
 
 app.include_router(calls_router)
 app = gr.mount_gradio_app(app, admin_demo, path="/admin")
-
-
-# Gradio sometimes sends queue/api requests to root — redirect to /admin
-from fastapi.responses import RedirectResponse
-
-
-@app.api_route("/queue/{path:path}", methods=["GET", "POST"])
-async def redirect_queue(path: str, request: Request):
-    return RedirectResponse(url=f"/admin/queue/{path}", status_code=307)
-
-
-@app.api_route("/api/{path:path}", methods=["GET", "POST"])
-async def redirect_api(path: str, request: Request):
-    return RedirectResponse(url=f"/admin/api/{path}", status_code=307)
 
 
 @app.get("/health")
