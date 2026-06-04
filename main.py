@@ -25,9 +25,18 @@ ADMIN_USER = os.getenv("ADMIN_USER", "admin")
 ADMIN_PASS = os.getenv("ADMIN_PASS", "")
 
 
+# Paths that Gradio uses internally — must bypass auth
+_GRADIO_INTERNAL = ("/admin/queue/", "/admin/api/", "/admin/upload", "/admin/file=")
+
+
 @app.middleware("http")
 async def admin_auth_middleware(request: Request, call_next):
-    if request.url.path.startswith("/admin") and ADMIN_PASS:
+    path = request.url.path
+    if path.startswith("/admin") and ADMIN_PASS:
+        # Let Gradio's internal API/queue requests through (browser already authenticated)
+        if any(path.startswith(p) for p in _GRADIO_INTERNAL):
+            return await call_next(request)
+
         import base64
         auth = request.headers.get("Authorization", "")
         if not auth.startswith("Basic "):
@@ -53,6 +62,20 @@ async def admin_auth_middleware(request: Request, call_next):
 
 app.include_router(calls_router)
 app = gr.mount_gradio_app(app, admin_demo, path="/admin")
+
+
+# Gradio sometimes sends queue/api requests to root — redirect to /admin
+from fastapi.responses import RedirectResponse
+
+
+@app.api_route("/queue/{path:path}", methods=["GET", "POST"])
+async def redirect_queue(path: str, request: Request):
+    return RedirectResponse(url=f"/admin/queue/{path}", status_code=307)
+
+
+@app.api_route("/api/{path:path}", methods=["GET", "POST"])
+async def redirect_api(path: str, request: Request):
+    return RedirectResponse(url=f"/admin/api/{path}", status_code=307)
 
 
 @app.get("/health")
