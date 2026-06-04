@@ -26,16 +26,14 @@ async def synthesize_speech(text: str, lang: str = "en") -> bytes:
 
     if lang == "hi":
         voice_id = os.getenv("ELEVENLABS_HINDI_VOICE_ID")
-        model_id = "eleven_multilingual_v2"
+        model_id = "eleven_turbo_v2_5"
     else:
         voice_id = os.getenv("ELEVENLABS_VOICE_ID")
-        model_id = "eleven_multilingual_v2"
-
-    text = _add_pauses(text)
+        model_id = "eleven_turbo_v2_5"
 
     url = (
         f"https://api.elevenlabs.io/v1/text-to-speech/{voice_id}/stream"
-        f"?output_format=ulaw_8000&optimize_streaming_latency=2"
+        f"?output_format=ulaw_8000&optimize_streaming_latency=3"
     )
     headers = {
         "xi-api-key": api_key,
@@ -50,7 +48,7 @@ async def synthesize_speech(text: str, lang: str = "en") -> bytes:
             "style": 0.45,
             "use_speaker_boost": True,
         },
-        "speed": 0.90,
+        "speed": 0.95,
     }
 
     client = _get_client()
@@ -67,16 +65,14 @@ async def synthesize_speech_stream(text: str, lang: str = "en"):
 
     if lang == "hi":
         voice_id = os.getenv("ELEVENLABS_HINDI_VOICE_ID")
-        model_id = "eleven_multilingual_v2"
+        model_id = "eleven_turbo_v2_5"
     else:
         voice_id = os.getenv("ELEVENLABS_VOICE_ID")
-        model_id = "eleven_multilingual_v2"
-
-    text = _add_pauses(text)
+        model_id = "eleven_turbo_v2_5"
 
     url = (
         f"https://api.elevenlabs.io/v1/text-to-speech/{voice_id}/stream"
-        f"?output_format=ulaw_8000&optimize_streaming_latency=2"
+        f"?output_format=ulaw_8000&optimize_streaming_latency=3"
     )
     headers = {
         "xi-api-key": api_key,
@@ -91,7 +87,7 @@ async def synthesize_speech_stream(text: str, lang: str = "en"):
             "style": 0.45,
             "use_speaker_boost": True,
         },
-        "speed": 0.90,
+        "speed": 0.95,
     }
 
     client = _get_client()
