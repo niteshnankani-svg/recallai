@@ -1,5 +1,6 @@
 import httpx
 import os
+import re
 from dotenv import load_dotenv
 load_dotenv()
 
@@ -9,8 +10,18 @@ _client: httpx.AsyncClient | None = None
 def _get_client() -> httpx.AsyncClient:
     global _client
     if _client is None or _client.is_closed:
-        _client = httpx.AsyncClient(timeout=15)
+        _client = httpx.AsyncClient(timeout=20)
     return _client
+
+
+def _add_pauses(text: str) -> str:
+    """Insert natural pauses to slow down speech and make it human-like.
+    ElevenLabs respects '...' as a pause cue."""
+    # Add a brief pause after commas that don't already have one
+    text = re.sub(r',\s*', ', ... ', text)
+    # Add a longer pause after sentence-ending punctuation
+    text = re.sub(r'([.!?।])\s+', r'\1 ... ', text)
+    return text
 
 
 async def synthesize_speech(text: str, lang: str = "en") -> bytes:
@@ -18,10 +29,12 @@ async def synthesize_speech(text: str, lang: str = "en") -> bytes:
 
     if lang == "hi":
         voice_id = os.getenv("ELEVENLABS_HINDI_VOICE_ID")
-        model_id = "eleven_turbo_v2_5"
+        model_id = "eleven_multilingual_v2"
     else:
         voice_id = os.getenv("ELEVENLABS_VOICE_ID")
-        model_id = "eleven_turbo_v2"
+        model_id = "eleven_multilingual_v2"
+
+    text = _add_pauses(text)
 
     url = (
         f"https://api.elevenlabs.io/v1/text-to-speech/{voice_id}/stream"
@@ -35,9 +48,9 @@ async def synthesize_speech(text: str, lang: str = "en") -> bytes:
         "text": text,
         "model_id": model_id,
         "voice_settings": {
-            "stability": 0.85,
-            "similarity_boost": 0.70,
-            "style": 0.35,
+            "stability": 0.90,
+            "similarity_boost": 0.60,
+            "style": 0.40,
             "use_speaker_boost": True,
         },
     }
@@ -56,10 +69,12 @@ async def synthesize_speech_stream(text: str, lang: str = "en"):
 
     if lang == "hi":
         voice_id = os.getenv("ELEVENLABS_HINDI_VOICE_ID")
-        model_id = "eleven_turbo_v2_5"
+        model_id = "eleven_multilingual_v2"
     else:
         voice_id = os.getenv("ELEVENLABS_VOICE_ID")
-        model_id = "eleven_turbo_v2"
+        model_id = "eleven_multilingual_v2"
+
+    text = _add_pauses(text)
 
     url = (
         f"https://api.elevenlabs.io/v1/text-to-speech/{voice_id}/stream"
@@ -73,9 +88,9 @@ async def synthesize_speech_stream(text: str, lang: str = "en"):
         "text": text,
         "model_id": model_id,
         "voice_settings": {
-            "stability": 0.85,
-            "similarity_boost": 0.70,
-            "style": 0.35,
+            "stability": 0.90,
+            "similarity_boost": 0.60,
+            "style": 0.40,
             "use_speaker_boost": True,
         },
     }
