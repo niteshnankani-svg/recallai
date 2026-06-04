@@ -15,12 +15,9 @@ def _get_client() -> httpx.AsyncClient:
 
 
 def _add_pauses(text: str) -> str:
-    """Insert natural pauses to slow down speech and make it human-like.
-    ElevenLabs respects '...' as a pause cue."""
-    # Add a brief pause after commas that don't already have one
-    text = re.sub(r',\s*', ', ... ', text)
+    """Insert natural pauses to slow down speech and make it human-like."""
     # Add a longer pause after sentence-ending punctuation
-    text = re.sub(r'([.!?।])\s+', r'\1 ... ', text)
+    text = re.sub(r'([.!?।])\s+', r'\1 ... ... ', text)
     return text
 
 
@@ -50,9 +47,10 @@ async def synthesize_speech(text: str, lang: str = "en") -> bytes:
         "voice_settings": {
             "stability": 0.90,
             "similarity_boost": 0.60,
-            "style": 0.40,
+            "style": 0.45,
             "use_speaker_boost": True,
         },
+        "speed": 0.78,
     }
 
     client = _get_client()
@@ -90,9 +88,10 @@ async def synthesize_speech_stream(text: str, lang: str = "en"):
         "voice_settings": {
             "stability": 0.90,
             "similarity_boost": 0.60,
-            "style": 0.40,
+            "style": 0.45,
             "use_speaker_boost": True,
         },
+        "speed": 0.78,
     }
 
     client = _get_client()
