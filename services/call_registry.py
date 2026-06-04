@@ -31,6 +31,12 @@ def get_user_name(phone: str) -> str:
     return names.get(phone, phone)
 
 
+def is_known_user(phone: str) -> bool:
+    """True if we have a saved display name (not just the phone number)."""
+    names = _load_user_names()
+    return phone in names
+
+
 def get_all_user_names() -> dict[str, str]:
     return _load_user_names()
 
@@ -63,6 +69,15 @@ def get_phone_for_call(call_sid: str) -> str:
     if not info:
         return "unknown"
     return info["phone"]
+
+
+def update_call_user_name(call_sid: str, name: str):
+    """Update the user name for an active call after name extraction."""
+    info = _active_calls.get(call_sid)
+    if info:
+        info["user_name"] = name
+        set_user_name(info["phone"], name)
+        print(f"[Registry] Updated call {call_sid} user name → {name}")
 
 
 def unregister_call(call_sid: str):

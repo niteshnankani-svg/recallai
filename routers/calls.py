@@ -13,7 +13,11 @@ from services.deepgram_service import transcribe_stream
 from services.language_detector import detect_language, clear_session_language
 from services.agent_service import get_ai_response_streaming, clear_call_history
 from services.tts_stream import stream_response_audio
-from services.call_registry import register_call, get_user_for_call, get_phone_for_call, unregister_call
+from services.call_registry import (
+    register_call, get_user_for_call, get_phone_for_call,
+    unregister_call, is_known_user, update_call_user_name,
+)
+from services.name_extractor import extract_name
 
 router = APIRouter(prefix="/calls", tags=["calls"])
 BASE_URL = os.getenv("BASE_URL")
@@ -62,13 +66,33 @@ async def media_stream(websocket: WebSocket):
     audio_queue: asyncio.Queue = asyncio.Queue()
     deepgram_ready = asyncio.Event()
     is_speaking = asyncio.Event()
+    awaiting_name = False
 
     async def handle_transcript(transcript: str):
+        nonlocal awaiting_name
         if is_speaking.is_set():
             return
         print(f"[RecallAI] User said: {transcript}")
         is_speaking.set()
         try:
+            # --- Name extraction for first-time callers ---
+            if awaiting_name:
+                name = await extract_name(transcript)
+                if name:
+                    update_call_user_name(call_sid, name)
+                    awaiting_name = False
+                    greeting = f"Great to meet you, {name}! I'm RecallAI, your wellness companion. How are you feeling today?"
+                    print(f"[RecallAI] Name captured: {name}")
+                    await stream_response_audio(greeting, stream_sid, websocket, lang="en")
+                    return
+                else:
+                    # Couldn't extract — ask once more, then move on
+                    awaiting_name = False
+                    fallback = "No worries! I'm RecallAI, your wellness companion. How are you feeling today?"
+                    await stream_response_audio(fallback, stream_sid, websocket, lang="en")
+                    return
+
+            # --- Normal conversation flow ---
             lang = detect_language(transcript, call_sid=call_sid)
 
             user_name = get_user_for_call(call_sid or "unknown")
@@ -104,7 +128,17 @@ async def media_stream(websocket: WebSocket):
                 call_sid = data["start"].get("callSid", "unknown")
                 print(f"[WebSocket] Stream started → {stream_sid}")
                 is_speaking.set()
-                opening = "Hi there, this is RecallAI calling to check in on you. How are you feeling today?"
+
+                phone = get_phone_for_call(call_sid)
+                if is_known_user(phone):
+                    user_name = get_user_for_call(call_sid)
+                    opening = f"Hi {user_name}, this is RecallAI. How have you been since we last talked?"
+                    print(f"[WebSocket] Returning user: {user_name}")
+                else:
+                    opening = "Hi there! I'm RecallAI, your wellness companion. I'd love to get to know you. What's your name?"
+                    awaiting_name = True
+                    print(f"[WebSocket] New user — asking for name")
+
                 await stream_response_audio(opening, stream_sid, websocket, lang="en")
                 is_speaking.clear()
 
