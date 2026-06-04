@@ -46,6 +46,7 @@ def extract_and_store_memories(
     conversation_history: list,
     user_name: str,
     call_sid: str,
+    phone: str = "unknown",
 ) -> int:
     """
     Called at end of every call.
@@ -79,12 +80,13 @@ Extract 3-5 key facts about the user that would be useful to remember for future
 Each fact should be a single sentence starting with the user's name.
 
 Format: one fact per line, no bullets, no numbers.
+Start each fact with the user's name: {user_name}.
 
 Examples:
-Nitesh mentioned feeling stressed about his job search.
-Nitesh's mother has been unwell recently.
-Nitesh finds it hard to sleep at night.
-Nitesh responded well to breathing exercises.
+{user_name} mentioned feeling stressed about their job search.
+{user_name}'s mother has been unwell recently.
+{user_name} finds it hard to sleep at night.
+{user_name} responded well to breathing exercises.
 """
 
     response = llm.invoke([HumanMessage(content=extraction_prompt)])
@@ -106,6 +108,7 @@ Nitesh responded well to breathing exercises.
         documents.append(fact)
         metadatas.append({
             "user": user_name,
+            "phone": phone,
             "call_sid": call_sid,
             "timestamp": timestamp,
             "type": "memory",

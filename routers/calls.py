@@ -11,8 +11,9 @@ from twilio.twiml.voice_response import VoiceResponse, Connect, Stream
 
 from services.deepgram_service import transcribe_stream
 from services.language_detector import detect_language, clear_session_language
-from services.agent_service import get_ai_response, clear_call_history
+from services.agent_service import get_ai_response_streaming, clear_call_history
 from services.tts_stream import stream_response_audio
+from services.call_registry import register_call, get_user_for_call, get_phone_for_call, unregister_call
 
 router = APIRouter(prefix="/calls", tags=["calls"])
 BASE_URL = os.getenv("BASE_URL")
@@ -22,7 +23,12 @@ BASE_URL = os.getenv("BASE_URL")
 async def call_webhook(request: Request):
     form = await request.form()
     call_sid = form.get("CallSid", "unknown")
-    print(f"[Webhook] Call answered → SID: {call_sid}")
+    from_number = form.get("From", "unknown")
+    to_number = form.get("To", "unknown")
+    direction = form.get("Direction", "inbound")
+    direction = "outbound" if "outbound" in direction.lower() else "inbound"
+    register_call(call_sid, from_number, to_number, direction)
+    print(f"[Webhook] Call answered → SID: {call_sid} | {from_number} → {to_number}")
     response = VoiceResponse()
     connect = Connect()
     stream = Stream(url=f"wss://{request.headers['host']}/calls/stream")
@@ -38,8 +44,11 @@ async def call_status(request: Request):
     call_sid = form.get("CallSid", "unknown")
     print(f"[Status] Call {call_sid} → {status}")
     if status == "completed":
-        clear_call_history(call_sid, user_name="Nitesh")
+        user_name = get_user_for_call(call_sid)
+        phone = get_phone_for_call(call_sid)
+        clear_call_history(call_sid, user_name=user_name, phone=phone)
         clear_session_language(call_sid)
+        unregister_call(call_sid)
     return Response(status_code=200)
 
 
@@ -62,14 +71,14 @@ async def media_stream(websocket: WebSocket):
         try:
             lang = detect_language(transcript, call_sid=call_sid)
 
-            ai_response = await get_ai_response(
+            user_name = get_user_for_call(call_sid or "unknown")
+            async for sentence, full_so_far in get_ai_response_streaming(
                 transcript=transcript,
                 call_sid=call_sid or "unknown",
-                user_name="Nitesh",
-            )
-            print(f"[RecallAI] AI says ({lang}): {ai_response}")
-
-            await stream_response_audio(ai_response, stream_sid, websocket, lang=lang)
+                user_name=user_name,
+            ):
+                print(f"[RecallAI] Streaming sentence ({lang}): {sentence}")
+                await stream_response_audio(sentence, stream_sid, websocket, lang=lang)
 
         finally:
             is_speaking.clear()

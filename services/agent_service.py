@@ -1,5 +1,6 @@
 import asyncio
 import os
+import re
 from concurrent.futures import ThreadPoolExecutor
 from dotenv import load_dotenv
 load_dotenv()
@@ -189,19 +190,113 @@ async def get_ai_response(
     return ai_text
 
 
-def save_call_memories(call_sid: str, user_name: str) -> None:
+_SENTENCE_END = re.compile(r'(?<=[.!?।])\s+')
+
+_streaming_llm = ChatAnthropic(
+    model="claude-sonnet-4-5",
+    api_key=ANTHROPIC_API_KEY,
+    temperature=0.8,
+    max_tokens=90,
+    streaming=True,
+)
+
+
+async def get_ai_response_streaming(
+    transcript: str,
+    call_sid: str,
+    user_name: str,
+    memory_context: str = "",
+):
+    """Yields (sentence, full_text_so_far) tuples as Claude streams."""
+    loop = asyncio.get_event_loop()
+
+    emotion_future = loop.run_in_executor(_executor, detect_emotion, transcript)
+    book_future = loop.run_in_executor(
+        _executor, retrieve_relevant_passages, transcript, 2
+    )
+    memory_future = (
+        loop.run_in_executor(_executor, retrieve_user_memories, user_name, transcript)
+        if not memory_context else None
+    )
+
+    futures = [emotion_future, book_future]
+    if memory_future:
+        futures.append(memory_future)
+
+    results = await asyncio.gather(*futures)
+    emotion_data = results[0]
+    book_context = results[1]
+    if memory_future:
+        memory_context = results[2]
+
+    arc = get_arc(call_sid)
+    arc.record_exchange(
+        emotion=emotion_data["wellness_category"],
+        user_text=transcript,
+    )
+
+    system_prompt = _build_system_prompt(
+        emotion_data=emotion_data,
+        stage_name=arc.get_stage_name(),
+        stage_instruction=arc.get_stage_instruction(),
+        user_name=user_name,
+        memory_context=memory_context,
+        book_context=book_context,
+    )
+
+    if call_sid not in _call_histories:
+        _call_histories[call_sid] = []
+    history = _call_histories[call_sid]
+
+    messages = [SystemMessage(content=system_prompt)]
+    messages.extend(history)
+    messages.append(HumanMessage(content=transcript))
+
+    buffer = ""
+    full_text = ""
+
+    async for chunk in _streaming_llm.astream(messages):
+        token = chunk.content if hasattr(chunk, 'content') else str(chunk)
+        if not token:
+            continue
+        buffer += token
+        parts = _SENTENCE_END.split(buffer)
+        if len(parts) > 1:
+            for sentence in parts[:-1]:
+                sentence = sentence.strip()
+                if sentence:
+                    full_text += sentence + " "
+                    yield sentence, full_text.strip()
+            buffer = parts[-1]
+
+    if buffer.strip():
+        full_text += buffer.strip()
+        yield buffer.strip(), full_text.strip()
+
+    ai_text = full_text.strip()
+    history.append(HumanMessage(content=transcript))
+    history.append(AIMessage(content=ai_text))
+    if len(history) > 20:
+        _call_histories[call_sid] = history[-20:]
+
+    print(f"[Agent] Stage: {arc.get_stage_name()} | Emotion: {emotion_data['wellness_category']}")
+    print(f"[Agent] Streamed: {ai_text[:80]}...")
+
+
+def save_call_memories(call_sid: str, user_name: str, phone: str = "unknown") -> None:
     history = _call_histories.get(call_sid, [])
     if history:
         count = extract_and_store_memories(
             conversation_history=history,
             user_name=user_name,
             call_sid=call_sid,
+            phone=phone,
         )
         print(f"[Memory] Saved {count} memories for {user_name}")
 
 
-def clear_call_history(call_sid: str, user_name: str = "Nitesh") -> None:
-    save_call_memories(call_sid, user_name)
+def clear_call_history(call_sid: str, user_name: str = "Unknown", phone: str = "unknown") -> None:
+    save_call_memories(call_sid, user_name, phone)
     clear_arc(call_sid)
     _call_histories.pop(call_sid, None)
     print(f"[Agent] Cleared history for call {call_sid}")
