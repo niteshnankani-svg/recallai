@@ -25,7 +25,7 @@ async def synthesize_speech(text: str, lang: str = "en") -> bytes:
 
     url = (
         f"https://api.elevenlabs.io/v1/text-to-speech/{voice_id}/stream"
-        f"?output_format=ulaw_8000&optimize_streaming_latency=3"
+        f"?output_format=ulaw_8000&optimize_streaming_latency=2"
     )
     headers = {
         "xi-api-key": api_key,
@@ -35,8 +35,10 @@ async def synthesize_speech(text: str, lang: str = "en") -> bytes:
         "text": text,
         "model_id": model_id,
         "voice_settings": {
-            "stability": 0.75,
-            "similarity_boost": 0.85,
+            "stability": 0.85,
+            "similarity_boost": 0.70,
+            "style": 0.35,
+            "use_speaker_boost": True,
         },
     }
 
@@ -61,7 +63,7 @@ async def synthesize_speech_stream(text: str, lang: str = "en"):
 
     url = (
         f"https://api.elevenlabs.io/v1/text-to-speech/{voice_id}/stream"
-        f"?output_format=ulaw_8000&optimize_streaming_latency=3"
+        f"?output_format=ulaw_8000&optimize_streaming_latency=2"
     )
     headers = {
         "xi-api-key": api_key,
@@ -71,8 +73,10 @@ async def synthesize_speech_stream(text: str, lang: str = "en"):
         "text": text,
         "model_id": model_id,
         "voice_settings": {
-            "stability": 0.75,
-            "similarity_boost": 0.85,
+            "stability": 0.85,
+            "similarity_boost": 0.70,
+            "style": 0.35,
+            "use_speaker_boost": True,
         },
     }
 
