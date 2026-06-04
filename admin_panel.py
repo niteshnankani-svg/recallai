@@ -2,6 +2,7 @@ import os
 import gradio as gr
 import chromadb
 from services.call_registry import set_user_name, get_all_user_names
+from services.analytics import get_recent_calls, get_emotion_distribution, get_stats
 
 
 def trigger_call(phone_number: str) -> str:
@@ -91,8 +92,86 @@ def list_users():
     return [[phone, name] for phone, name in names.items()]
 
 
+def load_analytics():
+    """Load all analytics data for the dashboard."""
+    stats = get_stats()
+    total_calls = stats.get("total_calls", "0")
+
+    # Calls per user
+    user_calls = []
+    for key, value in stats.items():
+        if key.startswith("calls:"):
+            user_name = key.replace("calls:", "")
+            user_calls.append([user_name, int(value)])
+    user_calls.sort(key=lambda r: r[1], reverse=True)
+    if not user_calls:
+        user_calls = [["—", 0]]
+
+    # Emotion distribution
+    emotions = get_emotion_distribution()
+    emotion_rows = [[e, int(c)] for e, c in emotions.items()]
+    emotion_rows.sort(key=lambda r: r[1], reverse=True)
+    if not emotion_rows:
+        emotion_rows = [["—", 0]]
+
+    # Recent calls
+    recent = get_recent_calls(15)
+    call_rows = []
+    for c in recent:
+        started = c.get("started_at", "")[:16].replace("T", " ")
+        duration = c.get("duration_seconds")
+        dur_str = f"{duration}s" if duration is not None else "active"
+        top_emotion = max(set(c.get("emotions", [])), key=c.get("emotions", []).count) if c.get("emotions") else "—"
+        call_rows.append([
+            started,
+            c.get("user_name", "—"),
+            c.get("direction", "—"),
+            dur_str,
+            str(c.get("exchanges", 0)),
+            top_emotion,
+        ])
+    if not call_rows:
+        call_rows = [["—", "—", "—", "—", "—", "No calls yet."]]
+
+    summary = f"Total calls: {total_calls}"
+
+    return summary, user_calls, emotion_rows, call_rows
+
+
 with gr.Blocks(theme=gr.themes.Soft(), title="RecallAI Admin") as demo:
     gr.Markdown("# RecallAI — Admin Panel\n**Voice AI Wellness Companion**")
+
+    with gr.Tab("Analytics"):
+        analytics_btn = gr.Button("Refresh Analytics", variant="primary")
+        summary_text = gr.Textbox(label="Overview", interactive=False)
+
+        with gr.Row():
+            with gr.Column():
+                gr.Markdown("### Calls per User")
+                user_calls_table = gr.Dataframe(
+                    headers=["User", "Calls"],
+                    datatype=["str", "number"],
+                    interactive=False,
+                )
+            with gr.Column():
+                gr.Markdown("### Emotion Distribution")
+                emotion_table = gr.Dataframe(
+                    headers=["Emotion", "Count"],
+                    datatype=["str", "number"],
+                    interactive=False,
+                )
+
+        gr.Markdown("### Recent Calls")
+        calls_table = gr.Dataframe(
+            headers=["Time", "User", "Direction", "Duration", "Exchanges", "Top Emotion"],
+            datatype=["str", "str", "str", "str", "str", "str"],
+            interactive=False,
+        )
+        analytics_btn.click(
+            fn=load_analytics,
+            inputs=None,
+            outputs=[summary_text, user_calls_table, emotion_table, calls_table],
+        )
 
     with gr.Tab("Trigger a Call"):
         phone_input = gr.Textbox(
@@ -136,5 +215,5 @@ with gr.Blocks(theme=gr.themes.Soft(), title="RecallAI Admin") as demo:
 
     with gr.Tab("System Status"):
         status_btn = gr.Button("Check Status", variant="secondary")
-        status_output = gr.Textbox(label="Environment Keys", interactive=False, lines=6)
+        status_output = gr.Textbox(label="Environment Keys", interactive=False, lines=7)
         status_btn.click(fn=check_status, inputs=None, outputs=status_output)

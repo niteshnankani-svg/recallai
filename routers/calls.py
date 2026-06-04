@@ -17,6 +17,7 @@ from services.call_registry import (
     register_call, get_user_for_call, get_phone_for_call,
     unregister_call, is_known_user, update_call_user_name,
 )
+from services.analytics import record_call_start, record_call_end
 from services.name_extractor import extract_name
 
 router = APIRouter(prefix="/calls", tags=["calls"])
@@ -48,6 +49,7 @@ async def call_status(request: Request):
     call_sid = form.get("CallSid", "unknown")
     print(f"[Status] Call {call_sid} → {status}")
     if status == "completed":
+        record_call_end(call_sid)
         user_name = get_user_for_call(call_sid)
         phone = get_phone_for_call(call_sid)
         clear_call_history(call_sid, user_name=user_name, phone=phone)
@@ -199,8 +201,12 @@ async def media_stream(websocket: WebSocket):
                 print(f"[WebSocket] Stream started → {stream_sid}")
 
                 phone = get_phone_for_call(call_sid)
+                user_name = get_user_for_call(call_sid)
+                from services.call_registry import get_call_info
+                call_info = get_call_info(call_sid) or {}
+                record_call_start(call_sid, phone, user_name, call_info.get("direction", "unknown"))
+
                 if is_known_user(phone):
-                    user_name = get_user_for_call(call_sid)
                     opening = f"Hi {user_name}, this is RecallAI. How have you been since we last talked?"
                     print(f"[WebSocket] Returning user: {user_name}")
                 else:
