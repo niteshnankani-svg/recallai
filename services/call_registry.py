@@ -1,44 +1,33 @@
-import json
-import os
+"""
+Call Registry
+─────────────
+Maps call_sid → user info for active calls (in-memory, ephemeral).
+Maps phone → display name persistently via Redis (survives redeploys).
+"""
+
+from services import redis_store
 
 _active_calls: dict[str, dict] = {}
 
-_USER_NAMES_FILE = os.getenv("USER_NAMES_FILE", "./data/user_names.json")
-
-
-def _load_user_names() -> dict[str, str]:
-    try:
-        with open(_USER_NAMES_FILE) as f:
-            return json.load(f)
-    except (FileNotFoundError, json.JSONDecodeError):
-        return {}
-
-
-def _save_user_names(names: dict[str, str]):
-    os.makedirs(os.path.dirname(_USER_NAMES_FILE), exist_ok=True)
-    with open(_USER_NAMES_FILE, "w") as f:
-        json.dump(names, f, indent=2)
+USER_NAMES_KEY = "recallai:user_names"
 
 
 def set_user_name(phone: str, name: str):
-    names = _load_user_names()
-    names[phone] = name
-    _save_user_names(names)
+    redis_store.hset(USER_NAMES_KEY, phone, name)
 
 
 def get_user_name(phone: str) -> str:
-    names = _load_user_names()
-    return names.get(phone, phone)
+    name = redis_store.hget(USER_NAMES_KEY, phone)
+    return name if name else phone
 
 
 def is_known_user(phone: str) -> bool:
     """True if we have a saved display name (not just the phone number)."""
-    names = _load_user_names()
-    return phone in names
+    return redis_store.hexists(USER_NAMES_KEY, phone)
 
 
 def get_all_user_names() -> dict[str, str]:
-    return _load_user_names()
+    return redis_store.hgetall(USER_NAMES_KEY)
 
 
 def register_call(call_sid: str, from_number: str, to_number: str, direction: str):

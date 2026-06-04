@@ -68,6 +68,12 @@ def check_status():
     for key in keys:
         status = "✅" if os.environ.get(key) else "❌"
         lines.append(f"{status}  {key}")
+
+    # Redis status
+    from services import redis_store
+    redis_status = "✅" if redis_store.is_available() else "❌"
+    lines.append(f"{redis_status}  REDIS (persistent store)")
+
     return "\n".join(lines)
 
 
