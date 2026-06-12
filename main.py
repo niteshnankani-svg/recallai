@@ -77,6 +77,31 @@ app.include_router(calls_router)
 app = gr.mount_gradio_app(app, admin_demo, path="/admin")
 
 
+@app.on_event("startup")
+async def warmup_models():
+    """Load the BERT emotion model + embedder at boot, not during a live call.
+    This prevents the first caller from eating a multi-second stall (and the
+    memory spike that previously OOM-crashed mid-call)."""
+    import asyncio
+
+    def _warm():
+        try:
+            from emotion.detector import detect_emotion
+            detect_emotion("warmup")
+            print("[Warmup] Emotion model loaded ✓")
+        except Exception as e:
+            print(f"[Warmup] Emotion warmup failed: {e}")
+        try:
+            from rag.retriever import retrieve_relevant_passages
+            retrieve_relevant_passages("warmup", 1)
+            print("[Warmup] RAG embedder + ChromaDB loaded ✓")
+        except Exception as e:
+            print(f"[Warmup] RAG warmup failed: {e}")
+
+    # Run in a thread so startup isn't blocked from accepting the port
+    asyncio.get_event_loop().run_in_executor(None, _warm)
+
+
 @app.get("/health")
 async def health():
     return {

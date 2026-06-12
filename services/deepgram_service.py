@@ -8,7 +8,12 @@ from deepgram import DeepgramClient, LiveTranscriptionEvents, LiveOptions
 DEEPGRAM_API_KEY = os.getenv("DEEPGRAM_API_KEY")
 
 
-async def transcribe_stream(audio_queue: asyncio.Queue, transcript_callback, ready_event=None) -> None:
+async def transcribe_stream(
+    audio_queue: asyncio.Queue,
+    transcript_callback,
+    ready_event=None,
+    interim_callback=None,
+) -> None:
     deepgram = DeepgramClient(DEEPGRAM_API_KEY)
     connection = deepgram.listen.asynclive.v("1")
 
@@ -16,9 +21,15 @@ async def transcribe_stream(audio_queue: asyncio.Queue, transcript_callback, rea
         try:
             transcript = result.channel.alternatives[0].transcript
             is_final = result.is_final
-            if transcript.strip() and is_final:
+            if not transcript.strip():
+                return
+            if is_final:
                 print(f"[Deepgram] ✓ {transcript}")
                 await transcript_callback(transcript)
+            elif interim_callback is not None:
+                # Interim hypothesis — used to precompute emotion/RAG while
+                # the user is still speaking (zero perceived latency).
+                await interim_callback(transcript)
         except Exception as e:
             print(f"[Deepgram] Parse error: {e}")
 

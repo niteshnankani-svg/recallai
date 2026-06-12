@@ -7,8 +7,10 @@ Uses regex patterns first (fast), falls back to Claude for ambiguous cases.
 
 import re
 import os
-from langchain_anthropic import ChatAnthropic
-from langchain_core.messages import HumanMessage
+import anthropic
+
+_NAME_MODEL = os.getenv("HOT_MODEL", "claude-haiku-4-5-20251001")
+_client = anthropic.AsyncAnthropic(api_key=os.getenv("ANTHROPIC_API_KEY"))
 
 # Patterns like "I'm Nitesh", "my name is Priya", "this is Rahul", "call me Sara"
 _NAME_PATTERNS = [
@@ -42,12 +44,6 @@ def extract_name_fast(text: str) -> str | None:
 async def extract_name_llm(text: str) -> str | None:
     """Fallback: ask Claude to extract the name."""
     try:
-        llm = ChatAnthropic(
-            model="claude-sonnet-4-5",
-            api_key=os.getenv("ANTHROPIC_API_KEY"),
-            max_tokens=20,
-            temperature=0,
-        )
         prompt = f"""Extract ONLY the person's name from this text.
 If they said their name, return just the name (e.g. "Nitesh").
 If no name is present, return exactly "NONE".
@@ -55,8 +51,13 @@ If no name is present, return exactly "NONE".
 Text: "{text}"
 
 Name:"""
-        response = await llm.ainvoke([HumanMessage(content=prompt)])
-        result = response.content.strip().strip('"').strip("'")
+        response = await _client.messages.create(
+            model=_NAME_MODEL,
+            max_tokens=20,
+            temperature=0,
+            messages=[{"role": "user", "content": prompt}],
+        )
+        result = response.content[0].text.strip().strip('"').strip("'")
         if result.upper() == "NONE" or len(result) > 20 or len(result) < 2:
             return None
         return result.title()
