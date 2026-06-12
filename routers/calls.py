@@ -11,7 +11,7 @@ from twilio.twiml.voice_response import VoiceResponse, Connect, Stream
 
 from services.deepgram_service import transcribe_stream
 from services.language_detector import detect_language, clear_session_language
-from services.agent_service import get_ai_response_streaming, clear_call_history
+from services.agent_service import get_ai_response_streaming, clear_call_history, precompute_context
 from services.tts_stream import stream_response_audio
 from services.call_registry import (
     register_call, get_user_for_call, get_phone_for_call,
@@ -126,6 +126,41 @@ async def media_stream(websocket: WebSocket):
         finally:
             is_speaking.clear()
 
+    # --- Speculative precompute: run emotion/RAG on interim transcripts ---
+    precompute_task: asyncio.Task | None = None
+    precompute_text = ""
+
+    async def handle_interim(interim: str):
+        """While the user is still speaking, precompute emotion + RAG so the
+        final response can start with zero lookup latency."""
+        nonlocal precompute_task, precompute_text
+        if awaiting_name or is_speaking.is_set():
+            return
+        words = interim.split()
+        # Only (re)launch on a meaningfully longer hypothesis to avoid churn
+        if len(words) < 3 or len(interim) <= len(precompute_text):
+            return
+        precompute_text = interim
+        if precompute_task and not precompute_task.done():
+            precompute_task.cancel()
+        user_name = get_user_for_call(call_sid or "unknown")
+        precompute_task = asyncio.create_task(
+            precompute_context(interim, call_sid or "unknown", user_name)
+        )
+
+    async def _get_precomputed():
+        """Fetch the latest speculative context if it's ready (bounded wait)."""
+        nonlocal precompute_task, precompute_text
+        task = precompute_task
+        precompute_task = None
+        precompute_text = ""
+        if task is None:
+            return None
+        try:
+            return await asyncio.wait_for(asyncio.shield(task), timeout=0.4)
+        except (asyncio.TimeoutError, asyncio.CancelledError, Exception):
+            return None
+
     async def handle_transcript(transcript: str):
         nonlocal awaiting_name, speaking_task
 
@@ -155,6 +190,7 @@ async def media_stream(websocket: WebSocket):
         # --- Normal conversation flow ---
         lang = detect_language(transcript, call_sid=call_sid)
         user_name = get_user_for_call(call_sid or "unknown")
+        precomputed = await _get_precomputed()
 
         async def _stream_ai_response():
             interrupted.clear()
@@ -164,6 +200,7 @@ async def media_stream(websocket: WebSocket):
                     transcript=transcript,
                     call_sid=call_sid or "unknown",
                     user_name=user_name,
+                    precomputed=precomputed,
                 ):
                     if interrupted.is_set():
                         print(f"[Barge-in] Stopping mid-response")
@@ -180,7 +217,10 @@ async def media_stream(websocket: WebSocket):
         speaking_task = asyncio.create_task(_stream_ai_response())
 
     async def run_deepgram():
-        await transcribe_stream(audio_queue, handle_transcript, deepgram_ready)
+        await transcribe_stream(
+            audio_queue, handle_transcript, deepgram_ready,
+            interim_callback=handle_interim,
+        )
 
     transcription_task = asyncio.create_task(run_deepgram())
 
@@ -234,6 +274,8 @@ async def media_stream(websocket: WebSocket):
             silence_task.cancel()
         if speaking_task and not speaking_task.done():
             speaking_task.cancel()
+        if precompute_task and not precompute_task.done():
+            precompute_task.cancel()
         await transcription_task
         if call_sid:
             clear_session_language(call_sid)

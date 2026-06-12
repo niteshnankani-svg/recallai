@@ -1,3 +1,20 @@
+"""
+Agent Service — hot path for live calls.
+
+Native Anthropic SDK (no LangChain) for lowest time-to-first-token.
+Model: Haiku 4.5 (fast, warm enough for short reflective turns).
+
+Latency design:
+  - emotion / RAG / memory can be PRECOMPUTED from interim transcripts
+    (see routers/calls.py) and passed in via `precomputed`, so they cost
+    zero perceived latency.
+  - Claude streams; we yield on the first clause boundary so TTS starts
+    almost immediately.
+  - Prompt caching is enabled on the static system block. It only engages
+    once the cached prefix exceeds Haiku's 4096-token floor (deep in a
+    call), so it is a cost/late-turn win, not the headline.
+"""
+
 import asyncio
 import os
 import re
@@ -5,8 +22,7 @@ from concurrent.futures import ThreadPoolExecutor
 from dotenv import load_dotenv
 load_dotenv()
 
-from langchain_anthropic import ChatAnthropic
-from langchain_core.messages import SystemMessage, HumanMessage, AIMessage
+import anthropic
 from emotion.detector import detect_emotion
 from rag.retriever import retrieve_relevant_passages
 from memory.retriever import retrieve_user_memories
@@ -16,14 +32,10 @@ from services.analytics import record_emotion
 
 ANTHROPIC_API_KEY = os.getenv("ANTHROPIC_API_KEY")
 
-_llm = ChatAnthropic(
-    model="claude-sonnet-4-5",
-    api_key=ANTHROPIC_API_KEY,
-    temperature=0.75,
-    max_tokens=150,
-)
+HOT_MODEL = os.getenv("HOT_MODEL", "claude-haiku-4-5-20251001")
 
-_executor = ThreadPoolExecutor(max_workers=3)
+_client = anthropic.AsyncAnthropic(api_key=ANTHROPIC_API_KEY)
+_executor = ThreadPoolExecutor(max_workers=4)
 
 BASE_SYSTEM_PROMPT = """
 You are RecallAI — a warm, skilled wellness companion trained in the techniques
@@ -102,10 +114,10 @@ both (Hinglish), match their mix naturally. Never switch languages mid-response.
 NATURALNESS: Use contractions (I'm, that's, you've). Use filler phrases
 occasionally ("you know", "I mean"). Sound like a real person on the phone,
 not a script. Never sound like a chatbot.
-"""
+""".strip()
 
 
-def _build_system_prompt(
+def _build_dynamic_context(
     emotion_data: dict,
     stage_name: str,
     stage_instruction: str,
@@ -113,112 +125,65 @@ def _build_system_prompt(
     memory_context: str = "",
     book_context: str = "",
 ) -> str:
-    prompt = BASE_SYSTEM_PROMPT.strip()
-
-    prompt += f"""
-
-CURRENT STAGE: {stage_name}
-{stage_instruction}
-
-DETECTED EMOTION: {emotion_data['wellness_category'].upper()} (confidence: {emotion_data['confidence']})
-EMOTION GUIDANCE: {emotion_data['instruction']}
-"""
-
+    """The per-turn context block (NOT cached — changes every turn)."""
+    parts = [
+        f"CURRENT STAGE: {stage_name}\n{stage_instruction}",
+        f"DETECTED EMOTION: {emotion_data['wellness_category'].upper()} "
+        f"(confidence: {emotion_data['confidence']})\n"
+        f"EMOTION GUIDANCE: {emotion_data['instruction']}",
+    ]
     if memory_context:
-        prompt += f"""
-
-MEMORIES FROM PAST CONVERSATIONS WITH {user_name.upper()}:
-{memory_context}
-Reference naturally — like a friend who remembers. Not robotically.
-"""
-
+        parts.append(
+            f"MEMORIES FROM PAST CONVERSATIONS WITH {user_name.upper()}:\n"
+            f"{memory_context}\nReference naturally — like a friend who remembers."
+        )
     if book_context:
-        prompt += f"""
-
-RELEVANT THERAPY BOOK PASSAGES (let these inform your technique; never quote directly):
-{book_context}
-"""
-
-    prompt += f"\nYou are speaking with {user_name}."
-    return prompt
+        parts.append(
+            "RELEVANT THERAPY BOOK PASSAGES (let these inform your technique; "
+            f"never quote directly):\n{book_context}"
+        )
+    parts.append(f"You are speaking with {user_name}.")
+    return "\n\n".join(parts)
 
 
-_call_histories: dict[str, list] = {}
+# ── per-call state ────────────────────────────────────────────────
+_call_histories: dict[str, list] = {}   # call_sid -> [{"role","content"}, ...]
+_call_memories: dict[str, str] = {}      # call_sid -> memory_context (fetched once)
 
 
-async def get_ai_response(
-    transcript: str,
-    call_sid: str,
-    user_name: str,
-    memory_context: str = "",
-) -> str:
+async def _gather_context(transcript, call_sid, user_name, memory_context):
+    """Run emotion + RAG (+ memory, once per call) — used when not precomputed."""
     loop = asyncio.get_event_loop()
-
     emotion_future = loop.run_in_executor(_executor, detect_emotion, transcript)
-    book_future = loop.run_in_executor(
-        _executor, retrieve_relevant_passages, transcript, 2
-    )
-    memory_future = (
-        loop.run_in_executor(_executor, retrieve_user_memories, user_name, transcript)
-        if not memory_context else None
-    )
+    book_future = loop.run_in_executor(_executor, retrieve_relevant_passages, transcript, 2)
+
+    # memory is stable for the whole call — fetch once, then reuse
+    if not memory_context and call_sid not in _call_memories:
+        memory_future = loop.run_in_executor(
+            _executor, retrieve_user_memories, user_name, transcript
+        )
+    else:
+        memory_future = None
 
     futures = [emotion_future, book_future]
     if memory_future:
         futures.append(memory_future)
-
     results = await asyncio.gather(*futures)
+
     emotion_data = results[0]
     book_context = results[1]
     if memory_future:
         memory_context = results[2]
+        _call_memories[call_sid] = memory_context
+    elif call_sid in _call_memories:
+        memory_context = _call_memories[call_sid]
 
-    arc = get_arc(call_sid)
-    arc.record_exchange(
-        emotion=emotion_data["wellness_category"],
-        user_text=transcript,
-    )
-
-    system_prompt = _build_system_prompt(
-        emotion_data=emotion_data,
-        stage_name=arc.get_stage_name(),
-        stage_instruction=arc.get_stage_instruction(),
-        user_name=user_name,
-        memory_context=memory_context,
-        book_context=book_context,
-    )
-
-    if call_sid not in _call_histories:
-        _call_histories[call_sid] = []
-    history = _call_histories[call_sid]
-
-    messages = [SystemMessage(content=system_prompt)]
-    messages.extend(history)
-    messages.append(HumanMessage(content=transcript))
-
-    response = await _llm.ainvoke(messages)
-    ai_text = response.content.strip()
-
-    history.append(HumanMessage(content=transcript))
-    history.append(AIMessage(content=ai_text))
-    if len(history) > 20:
-        _call_histories[call_sid] = history[-20:]
-
-    record_emotion(call_sid, emotion_data["wellness_category"], user_name)
-    print(f"[Agent] Stage: {arc.get_stage_name()} | Emotion: {emotion_data['wellness_category']}")
-    print(f"[Agent] Response: {ai_text[:80]}...")
-    return ai_text
+    return emotion_data, book_context, memory_context
 
 
-_SENTENCE_END = re.compile(r'(?<=[.!?।])\s+')
-
-_streaming_llm = ChatAnthropic(
-    model="claude-sonnet-4-5",
-    api_key=ANTHROPIC_API_KEY,
-    temperature=0.75,
-    max_tokens=150,
-    streaming=True,
-)
+# Yield TTS chunks at clause boundaries so audio starts on the first clause.
+_CLAUSE_END = re.compile(r'(?<=[,;:.!?।])\s+')
+_MIN_CLAUSE_CHARS = 12
 
 
 async def get_ai_response_streaming(
@@ -226,36 +191,28 @@ async def get_ai_response_streaming(
     call_sid: str,
     user_name: str,
     memory_context: str = "",
+    precomputed: dict | None = None,
 ):
-    """Yields (sentence, full_text_so_far) tuples as Claude streams."""
-    loop = asyncio.get_event_loop()
-
-    emotion_future = loop.run_in_executor(_executor, detect_emotion, transcript)
-    book_future = loop.run_in_executor(
-        _executor, retrieve_relevant_passages, transcript, 2
-    )
-    memory_future = (
-        loop.run_in_executor(_executor, retrieve_user_memories, user_name, transcript)
-        if not memory_context else None
-    )
-
-    futures = [emotion_future, book_future]
-    if memory_future:
-        futures.append(memory_future)
-
-    results = await asyncio.gather(*futures)
-    emotion_data = results[0]
-    book_context = results[1]
-    if memory_future:
-        memory_context = results[2]
+    """
+    Yields (chunk, full_text_so_far) as Claude streams.
+    `precomputed` (optional): {"emotion_data", "book_context", "memory_context"}
+    computed speculatively from interim transcripts to remove perceived latency.
+    """
+    if precomputed and precomputed.get("emotion_data"):
+        emotion_data = precomputed["emotion_data"]
+        book_context = precomputed.get("book_context", "")
+        memory_context = precomputed.get("memory_context", "") or memory_context
+        if not memory_context and call_sid in _call_memories:
+            memory_context = _call_memories[call_sid]
+    else:
+        emotion_data, book_context, memory_context = await _gather_context(
+            transcript, call_sid, user_name, memory_context
+        )
 
     arc = get_arc(call_sid)
-    arc.record_exchange(
-        emotion=emotion_data["wellness_category"],
-        user_text=transcript,
-    )
+    arc.record_exchange(emotion=emotion_data["wellness_category"], user_text=transcript)
 
-    system_prompt = _build_system_prompt(
+    dynamic_context = _build_dynamic_context(
         emotion_data=emotion_data,
         stage_name=arc.get_stage_name(),
         stage_instruction=arc.get_stage_instruction(),
@@ -264,44 +221,66 @@ async def get_ai_response_streaming(
         book_context=book_context,
     )
 
-    if call_sid not in _call_histories:
-        _call_histories[call_sid] = []
-    history = _call_histories[call_sid]
+    history = _call_histories.setdefault(call_sid, [])
+    messages = history + [{"role": "user", "content": transcript}]
 
-    messages = [SystemMessage(content=system_prompt)]
-    messages.extend(history)
-    messages.append(HumanMessage(content=transcript))
+    system = [
+        {"type": "text", "text": BASE_SYSTEM_PROMPT, "cache_control": {"type": "ephemeral"}},
+        {"type": "text", "text": dynamic_context},
+    ]
 
     buffer = ""
     full_text = ""
+    first_chunk_sent = False
 
-    async for chunk in _streaming_llm.astream(messages):
-        token = chunk.content if hasattr(chunk, 'content') else str(chunk)
-        if not token:
-            continue
-        buffer += token
-        parts = _SENTENCE_END.split(buffer)
-        if len(parts) > 1:
-            for sentence in parts[:-1]:
-                sentence = sentence.strip()
-                if sentence:
-                    full_text += sentence + " "
-                    yield sentence, full_text.strip()
-            buffer = parts[-1]
+    async with _client.messages.stream(
+        model=HOT_MODEL,
+        max_tokens=150,
+        temperature=0.75,
+        system=system,
+        messages=messages,
+    ) as stream:
+        async for token in stream.text_stream:
+            if not token:
+                continue
+            buffer += token
+            # First clause: flush early (start audio ASAP). After that, on clause ends.
+            parts = _CLAUSE_END.split(buffer)
+            if len(parts) > 1:
+                for clause in parts[:-1]:
+                    clause = clause.strip()
+                    if clause and len(clause) >= (_MIN_CLAUSE_CHARS if not first_chunk_sent else 1):
+                        full_text += clause + " "
+                        first_chunk_sent = True
+                        yield clause, full_text.strip()
+                buffer = parts[-1]
 
     if buffer.strip():
         full_text += buffer.strip()
         yield buffer.strip(), full_text.strip()
 
     ai_text = full_text.strip()
-    history.append(HumanMessage(content=transcript))
-    history.append(AIMessage(content=ai_text))
+    history.append({"role": "user", "content": transcript})
+    history.append({"role": "assistant", "content": ai_text})
     if len(history) > 20:
         _call_histories[call_sid] = history[-20:]
 
     record_emotion(call_sid, emotion_data["wellness_category"], user_name)
     print(f"[Agent] Stage: {arc.get_stage_name()} | Emotion: {emotion_data['wellness_category']}")
     print(f"[Agent] Streamed: {ai_text[:80]}...")
+
+
+# ── speculative precompute (called from interim transcripts) ──────
+async def precompute_context(transcript: str, call_sid: str, user_name: str) -> dict:
+    """Run emotion + RAG (+ memory once) for an interim transcript, in background."""
+    emotion_data, book_context, memory_context = await _gather_context(
+        transcript, call_sid, user_name, ""
+    )
+    return {
+        "emotion_data": emotion_data,
+        "book_context": book_context,
+        "memory_context": memory_context,
+    }
 
 
 def save_call_memories(call_sid: str, user_name: str, phone: str = "unknown") -> None:
@@ -320,4 +299,5 @@ def clear_call_history(call_sid: str, user_name: str = "Unknown", phone: str = "
     save_call_memories(call_sid, user_name, phone)
     clear_arc(call_sid)
     _call_histories.pop(call_sid, None)
+    _call_memories.pop(call_sid, None)
     print(f"[Agent] Cleared history for call {call_sid}")

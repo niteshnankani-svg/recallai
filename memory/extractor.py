@@ -19,12 +19,13 @@ from dotenv import load_dotenv
 load_dotenv()
 
 from datetime import datetime
-from langchain_anthropic import ChatAnthropic
-from langchain_core.messages import HumanMessage, SystemMessage
+import anthropic
 import chromadb
 from chromadb.utils import embedding_functions
 
 ANTHROPIC_API_KEY = os.getenv("ANTHROPIC_API_KEY")
+EXTRACT_MODEL = os.getenv("EXTRACT_MODEL", "claude-haiku-4-5-20251001")
+_client = anthropic.Anthropic(api_key=ANTHROPIC_API_KEY)
 CHROMA_PERSIST_DIR = os.getenv("CHROMA_PERSIST_DIR", "./data/chromadb")
 MEMORY_COLLECTION = "user_memories"
 
@@ -57,18 +58,11 @@ def extract_and_store_memories(
     if not conversation_history:
         return 0
 
-    # Build conversation text
+    # Build conversation text — history items are {"role","content"} dicts
     conv_text = ""
     for msg in conversation_history:
-        role = "User" if msg.__class__.__name__ == "HumanMessage" else "RecallAI"
-        conv_text += f"{role}: {msg.content}\n"
-
-    # Ask Claude to extract key facts
-    llm = ChatAnthropic(
-        model="claude-sonnet-4-5",
-        api_key=ANTHROPIC_API_KEY,
-        max_tokens=500,
-    )
+        role = "User" if msg.get("role") == "user" else "RecallAI"
+        conv_text += f"{role}: {msg.get('content', '')}\n"
 
     extraction_prompt = f"""
 You are extracting key facts from a wellness conversation for future reference.
@@ -89,8 +83,12 @@ Examples:
 {user_name} responded well to breathing exercises.
 """
 
-    response = llm.invoke([HumanMessage(content=extraction_prompt)])
-    facts_text = response.content.strip()
+    response = _client.messages.create(
+        model=EXTRACT_MODEL,
+        max_tokens=500,
+        messages=[{"role": "user", "content": extraction_prompt}],
+    )
+    facts_text = response.content[0].text.strip()
 
     facts = [f.strip() for f in facts_text.split('\n') if f.strip()]
     print(f"[Memory] Extracted {len(facts)} facts from call")
