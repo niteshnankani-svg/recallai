@@ -11,6 +11,7 @@ import asyncio
 import base64
 import re
 from services.elevenlabs_service import synthesize_speech, synthesize_speech_stream
+from services.sarvam_service import sarvam_synthesize
 
 FRAME_SIZE = 160
 
@@ -32,6 +33,37 @@ async def _clear_twilio_audio(stream_sid: str, websocket):
         print(f"[TTS Stream] Clear error: {e}")
 
 
+async def _send_frames(audio_bytes: bytes, stream_sid: str, websocket,
+                       interrupted: asyncio.Event | None) -> bool:
+    """Frame raw mulaw bytes out to Twilio. Returns False if interrupted."""
+    for i in range(0, len(audio_bytes), FRAME_SIZE):
+        if interrupted and interrupted.is_set():
+            await _clear_twilio_audio(stream_sid, websocket)
+            return False
+        frame = audio_bytes[i:i + FRAME_SIZE]
+        if len(frame) < FRAME_SIZE:
+            frame = frame + b'\xff' * (FRAME_SIZE - len(frame))
+        frame_b64 = base64.b64encode(frame).decode("utf-8")
+        await websocket.send_json({
+            "event": "media",
+            "streamSid": stream_sid,
+            "media": {"payload": frame_b64},
+        })
+    return True
+
+
+async def _stream_sarvam(ai_text, stream_sid, websocket, interrupted) -> bool:
+    """Hindi TTS via Sarvam Bulbul (native Indian-language voice)."""
+    if interrupted and interrupted.is_set():
+        return False
+    try:
+        audio_bytes = await sarvam_synthesize(ai_text)
+    except Exception as e:
+        print(f"[TTS Stream] Sarvam error: {e}")
+        return True
+    return await _send_frames(audio_bytes, stream_sid, websocket, interrupted)
+
+
 async def stream_response_audio(
     ai_text: str,
     stream_sid: str,
@@ -39,9 +71,12 @@ async def stream_response_audio(
     lang: str = "en",
     interrupted: asyncio.Event | None = None,
 ) -> bool:
-    """Stream audio directly from ElevenLabs to Twilio as chunks arrive.
+    """Stream audio to Twilio. Hindi → Sarvam Bulbul, English → ElevenLabs.
     Returns True if completed, False if interrupted."""
     print(f"[TTS Stream] Streaming: '{ai_text[:50]}...' ({lang})")
+
+    if lang == "hi":
+        return await _stream_sarvam(ai_text, stream_sid, websocket, interrupted)
 
     try:
         async for chunk in synthesize_speech_stream(ai_text, lang=lang):
