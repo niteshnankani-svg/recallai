@@ -17,6 +17,7 @@ from pydantic import BaseModel
 
 from rag.retriever import retrieve_relevant_passages
 from memory.retriever import retrieve_user_memories
+from services.call_registry import get_user_name, is_known_user
 
 app = FastAPI(title="RecallAI Retrieval Bridge for Dograh")
 
@@ -49,3 +50,36 @@ def retrieve_memories(q: MemoryQuery):
     """Cross-call memories for a user from the existing user_memories collection."""
     memories = retrieve_user_memories(q.user_name, q.topic, n_results=q.n_results)
     return {"memories": memories or "No past memories for this user yet."}
+
+
+class PreCall(BaseModel):
+    phone: str = ""
+    user_name: str = ""
+
+
+@app.post("/precall")
+def precall(p: PreCall):
+    """Dograh Pre-Call Data Fetch: at call start, resolve the caller and pull
+    their past memories so the agent can greet a returning user by name.
+
+    Returns variables Dograh injects into the agent prompt:
+      known_user, user_name, opening, memories
+    """
+    name = p.user_name or (get_user_name(p.phone) if p.phone else "")
+    known = bool(p.user_name) or (is_known_user(p.phone) if p.phone else False)
+    memories = ""
+    if name:
+        memories = retrieve_user_memories(name, "", n_results=5)
+
+    if known and name:
+        opening = f"Hi {name}, this is RecallAI. How have you been since we last talked?"
+    else:
+        opening = ("Hi there! I'm RecallAI, your wellness companion. "
+                   "I'd love to get to know you. What's your name?")
+
+    return {
+        "known_user": known,
+        "user_name": name or "there",
+        "opening": opening,
+        "memories": memories or "No past memories yet.",
+    }
