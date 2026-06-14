@@ -181,9 +181,11 @@ async def _gather_context(transcript, call_sid, user_name, memory_context):
     return emotion_data, book_context, memory_context
 
 
-# Yield TTS chunks at clause boundaries so audio starts on the first clause.
-_CLAUSE_END = re.compile(r'(?<=[,;:.!?।])\s+')
-_MIN_CLAUSE_CHARS = 12
+# Yield TTS chunks at SENTENCE boundaries. We deliberately do NOT split on
+# commas: each comma-fragment used to be synthesized as a separate TTS request,
+# and the engine re-rolled intonation per fragment — producing an audible wobble
+# within a single turn. One sentence = one consistent synthesis unit.
+_SENTENCE_END = re.compile(r'(?<=[.!?।])\s+')
 
 
 async def get_ai_response_streaming(
@@ -231,7 +233,6 @@ async def get_ai_response_streaming(
 
     buffer = ""
     full_text = ""
-    first_chunk_sent = False
 
     async with _client.messages.stream(
         model=HOT_MODEL,
@@ -244,15 +245,15 @@ async def get_ai_response_streaming(
             if not token:
                 continue
             buffer += token
-            # First clause: flush early (start audio ASAP). After that, on clause ends.
-            parts = _CLAUSE_END.split(buffer)
+            # Flush each complete SENTENCE to TTS as it forms (one synthesis
+            # unit per sentence — consistent prosody, no mid-turn wobble).
+            parts = _SENTENCE_END.split(buffer)
             if len(parts) > 1:
-                for clause in parts[:-1]:
-                    clause = clause.strip()
-                    if clause and len(clause) >= (_MIN_CLAUSE_CHARS if not first_chunk_sent else 1):
-                        full_text += clause + " "
-                        first_chunk_sent = True
-                        yield clause, full_text.strip()
+                for sentence in parts[:-1]:
+                    sentence = sentence.strip()
+                    if sentence:
+                        full_text += sentence + " "
+                        yield sentence, full_text.strip()
                 buffer = parts[-1]
 
     if buffer.strip():
