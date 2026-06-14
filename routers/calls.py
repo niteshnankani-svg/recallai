@@ -73,25 +73,37 @@ async def media_stream(websocket: WebSocket):
     silence_task: asyncio.Task | None = None
     awaiting_name = False
     silence_nudge_count = 0
+    # Voice is locked to the first language the caller actually speaks, then
+    # kept for the whole call. Prevents flipping between the English (ElevenLabs)
+    # and Hindi (Sarvam) voices mid-conversation — i.e. the "two voices" bug.
+    call_voice_lang: str | None = None
 
     SILENCE_TIMEOUT = 20  # seconds
     MAX_NUDGES = 2
 
-    NUDGE_MESSAGES = [
-        "I'm still here whenever you're ready. Take your time.",
-        "No rush at all. I'm here if you'd like to keep talking.",
-    ]
+    NUDGE_MESSAGES = {
+        "en": [
+            "I'm still here whenever you're ready. Take your time.",
+            "No rush at all. I'm here if you'd like to keep talking.",
+        ],
+        "hi": [
+            "मैं यहीं हूँ, आप अपना समय लीजिए।",
+            "कोई जल्दी नहीं है। जब बात करने का मन हो, मैं यहीं हूँ।",
+        ],
+    }
 
     async def _silence_watcher():
-        """Nudge the user after prolonged silence."""
+        """Nudge the user after prolonged silence, in the call's locked voice."""
         nonlocal silence_nudge_count, speaking_task
         try:
             while silence_nudge_count < MAX_NUDGES:
                 await asyncio.sleep(SILENCE_TIMEOUT)
                 if not is_speaking.is_set() and stream_sid:
-                    msg = NUDGE_MESSAGES[min(silence_nudge_count, len(NUDGE_MESSAGES) - 1)]
-                    print(f"[Silence] Nudge #{silence_nudge_count + 1}: {msg}")
-                    speaking_task = asyncio.create_task(_speak(msg))
+                    nudge_lang = call_voice_lang or "en"
+                    msgs = NUDGE_MESSAGES.get(nudge_lang, NUDGE_MESSAGES["en"])
+                    msg = msgs[min(silence_nudge_count, len(msgs) - 1)]
+                    print(f"[Silence] Nudge #{silence_nudge_count + 1} ({nudge_lang}): {msg}")
+                    speaking_task = asyncio.create_task(_speak(msg, lang=nudge_lang))
                     silence_nudge_count += 1
         except asyncio.CancelledError:
             pass
@@ -162,7 +174,7 @@ async def media_stream(websocket: WebSocket):
             return None
 
     async def handle_transcript(transcript: str):
-        nonlocal awaiting_name, speaking_task
+        nonlocal awaiting_name, speaking_task, call_voice_lang
 
         # --- Barge-in: interrupt AI if it's speaking ---
         if is_speaking.is_set():
@@ -188,7 +200,12 @@ async def media_stream(websocket: WebSocket):
                 return
 
         # --- Normal conversation flow ---
-        lang = detect_language(transcript, call_sid=call_sid)
+        # Detect once on the first real turn, then lock the voice for the call.
+        detected = detect_language(transcript, call_sid=call_sid)
+        if call_voice_lang is None:
+            call_voice_lang = detected
+            print(f"[Voice] Locked call voice to '{call_voice_lang}'")
+        lang = call_voice_lang
         user_name = get_user_for_call(call_sid or "unknown")
         precomputed = await _get_precomputed()
 
