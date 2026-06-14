@@ -200,11 +200,18 @@ async def media_stream(websocket: WebSocket):
                 return
 
         # --- Normal conversation flow ---
-        # Detect once on the first real turn, then lock the voice for the call.
+        # Voice selection is "sticky-Hindi": use English until the caller first
+        # speaks Hindi, then lock to the Hindi (Sarvam) voice for the rest of the
+        # call and never flip back. This avoids both the two-voice flip AND the
+        # earlier bug where a misdetected first turn pinned a Hindi call to the
+        # English voice.
         detected = detect_language(transcript, call_sid=call_sid)
-        if call_voice_lang is None:
-            call_voice_lang = detected
-            print(f"[Voice] Locked call voice to '{call_voice_lang}'")
+        if call_voice_lang != "hi":
+            if detected == "hi":
+                call_voice_lang = "hi"
+                print("[Voice] Locked call voice to 'hi' (Sarvam)")
+            else:
+                call_voice_lang = "en"
         lang = call_voice_lang
         user_name = get_user_for_call(call_sid or "unknown")
         precomputed = await _get_precomputed()
