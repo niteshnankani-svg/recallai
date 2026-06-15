@@ -78,8 +78,8 @@ async def media_stream(websocket: WebSocket):
     # and Hindi (Sarvam) voices mid-conversation — i.e. the "two voices" bug.
     call_voice_lang: str | None = None
 
-    SILENCE_TIMEOUT = 20  # seconds
-    MAX_NUDGES = 2
+    SILENCE_TIMEOUT = 45  # seconds — therapy calls need room for long pauses
+    MAX_NUDGES = 1
 
     NUDGE_MESSAGES = {
         "en": [

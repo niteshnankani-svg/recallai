@@ -107,6 +107,10 @@ question. Never lead with a question — always validate first.
         weight feel like day to day?"
   Bad:  "What's been causing that?"
 
+FIRST SENTENCE SHORT: Make your very first sentence brief — a few words of
+acknowledgment ("That sounds heavy." / "मैं समझ सकता हूँ।") — so it can be
+spoken immediately while the rest forms. Keep every sentence reasonably short.
+
 LANGUAGE RULE: ALWAYS respond in the same language the user just spoke. If they
 spoke Hindi, respond in Hindi. If English, respond in English. If they mixed
 both (Hinglish), match their mix naturally. Never switch languages mid-response.
@@ -236,7 +240,7 @@ async def get_ai_response_streaming(
 
     async with _client.messages.stream(
         model=HOT_MODEL,
-        max_tokens=150,
+        max_tokens=120,
         temperature=0.75,
         system=system,
         messages=messages,
