@@ -12,12 +12,12 @@ class Stage(Enum):
 
 
 STAGE_MIN_EXCHANGES = {
-    Stage.FEEL: 2,
-    Stage.CAUSE: 3,
-    Stage.NEED: 2,
-    Stage.STABILIZE: 2,
-    Stage.REFRAME: 2,
-    Stage.MANIFEST: 3,
+    Stage.FEEL: 3,
+    Stage.CAUSE: 4,
+    Stage.NEED: 3,
+    Stage.STABILIZE: 3,
+    Stage.REFRAME: 3,
+    Stage.MANIFEST: 5,
 }
 
 STAGE_INSTRUCTIONS = {
@@ -134,24 +134,22 @@ class ConversationArc:
         if current == Stage.MANIFEST:
             return
 
+        # NOTE: the BERT emotion model is English-only and returns "neutral" for
+        # all Hindi/Hinglish speech, so emotion is NOT a reliable advance signal.
+        # Advancement is driven by exchange count (always reliable) plus the
+        # text-keyword cues for cause/possibility (which work in any language).
         should_advance = False
 
-        if current == Stage.FEEL:
-            should_advance = emotion != "neutral" or exchanges >= min_ex + 1
-
-        elif current == Stage.CAUSE:
+        if current == Stage.CAUSE:
             has_cause = any(w in text_lower for w in CAUSE_KEYWORDS)
-            should_advance = has_cause or exchanges >= min_ex + 1
-
-        elif current == Stage.NEED:
-            should_advance = exchanges >= min_ex
-
-        elif current == Stage.STABILIZE:
-            should_advance = emotion in ["joy", "neutral"] or exchanges >= min_ex + 1
+            should_advance = has_cause or exchanges >= min_ex + 2
 
         elif current == Stage.REFRAME:
             has_possibility = any(w in text_lower for w in POSSIBILITY_KEYWORDS)
-            should_advance = has_possibility or exchanges >= min_ex + 1
+            should_advance = has_possibility or exchanges >= min_ex + 2
+
+        else:  # FEEL, NEED, STABILIZE — purely time-based (min_ex already met)
+            should_advance = True
 
         if should_advance:
             next_stage = Stage(current.value + 1)
