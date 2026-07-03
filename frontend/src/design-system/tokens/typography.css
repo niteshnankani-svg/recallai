@@ -1,0 +1,32 @@
+/* RecallAI — Type tokens
+   Display: Lora — a warm, humanist serif; reads like a journal entry, not a
+   corporate deck. Body/UI: Manrope — clean geometric-humanist sans, calmer
+   and less "default" than Inter. Devanagari fallback stacks in for Hindi copy.
+   NOTE: no font FILES were provided anywhere in the attached backend repo —
+   these are Google Fonts substitutes. Flagged in README; ask the brand owner
+   for real files if this becomes a production system. */
+
+:root {
+  --font-display: 'Lora', 'Noto Serif Devanagari', Georgia, serif;
+  --font-body:    'Manrope', 'Noto Sans Devanagari', -apple-system, sans-serif;
+  --font-mono:    'IBM Plex Mono', ui-monospace, 'SF Mono', monospace;
+
+  /* Display / editorial — used sparingly: hero lines, big quotes, call state */
+  --text-display-1: 600 56px/1.08 var(--font-display);
+  --text-display-2: 600 40px/1.15 var(--font-display);
+  --text-display-3: 500 28px/1.25 var(--font-display);
+
+  /* UI type scale — Manrope, for everything interactive/read-heavy */
+  --text-title-lg:  700 22px/1.3  var(--font-body);
+  --text-title-md:  700 18px/1.35 var(--font-body);
+  --text-title-sm:  600 15px/1.4  var(--font-body);
+  --text-body-lg:   400 17px/1.55 var(--font-body);
+  --text-body-md:   400 15px/1.55 var(--font-body);
+  --text-body-sm:   400 13px/1.5  var(--font-body);
+  --text-label:     600 12px/1.3  var(--font-body);
+  --text-label-wide: 600 11px/1.3 var(--font-body);
+  --text-mono-sm:   400 13px/1.5  var(--font-mono);
+
+  --tracking-label: 0.06em;
+  --tracking-display: -0.01em;
+}

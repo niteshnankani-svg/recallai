@@ -1,0 +1,97 @@
+/* RecallAI — Color tokens
+   Warm, low-arousal wellness palette: sand/cream surfaces, clay (terracotta) as
+   the one warm accent, sage as a quiet secondary, ink-warm neutrals for text.
+   No blue/purple gradients, no clinical blues — this is a phone call from a
+   calm person, not a SaaS dashboard. */
+
+:root {
+  /* ---- Base palette ---- */
+  --clay-50:  #FBF1EA;
+  --clay-100: #F5DECC;
+  --clay-200: #EABFA0;
+  --clay-300: #DE9C74;
+  --clay-400: #CD7C50;
+  --clay-500: #B85F35;   /* primary brand accent */
+  --clay-600: #9C4A27;
+  --clay-700: #7C3A20;
+  --clay-800: #5C2B18;
+  --clay-900: #3D1D10;
+
+  --sage-50:  #F1F3EC;
+  --sage-100: #E1E6D5;
+  --sage-200: #C7D0B3;
+  --sage-300: #A9B78D;
+  --sage-400: #8DA06D;
+  --sage-500: #718752;   /* secondary accent — grounding, calm-progress */
+  --sage-600: #5A6C41;
+  --sage-700: #465433;
+  --sage-800: #333D25;
+  --sage-900: #212718;
+
+  --sand-25:  #FDFBF7;
+  --sand-50:  #FAF5EC;
+  --sand-100: #F3EBDC;
+  --sand-200: #E9DCC6;
+  --sand-300: #DBC8A9;
+
+  --ink-50:  #F6F4F1;
+  --ink-100: #E9E4DC;
+  --ink-300: #C3B9AC;
+  --ink-500: #8C8072;
+  --ink-700: #564E43;
+  --ink-800: #3A342C;
+  --ink-900: #241F19;   /* near-black, warm */
+
+  /* ---- Semantic — surfaces ---- */
+  --surface-app:        var(--sand-50);
+  --surface-canvas:     var(--sand-25);
+  --surface-card:       #FFFFFF;
+  --surface-card-tint:  var(--sand-100);
+  --surface-sunken:     var(--sand-100);
+  --surface-inverse:    var(--ink-900);
+  --surface-overlay:    rgba(36, 31, 25, 0.48);
+
+  /* ---- Semantic — text ---- */
+  --text-primary:    var(--ink-900);
+  --text-secondary:  var(--ink-700);
+  --text-tertiary:   var(--ink-500);
+  --text-disabled:   var(--ink-300);
+  --text-inverse:    var(--sand-50);
+  --text-link:       var(--clay-600);
+
+  /* ---- Semantic — brand / accent ---- */
+  --accent-primary:       var(--clay-500);
+  --accent-primary-hover: var(--clay-600);
+  --accent-primary-press: var(--clay-700);
+  --accent-primary-soft:  var(--clay-50);
+  --accent-secondary:     var(--sage-500);
+  --accent-secondary-soft: var(--sage-50);
+
+  /* ---- Semantic — status ---- */
+  --status-positive:      var(--sage-600);
+  --status-positive-soft: var(--sage-50);
+  --status-attention:     var(--clay-600);
+  --status-attention-soft: var(--clay-50);
+  --status-critical:      #A83B2E;
+  --status-critical-soft: #FBEAE6;
+  --status-neutral:       var(--ink-500);
+  --status-neutral-soft:  var(--ink-50);
+
+  /* ---- Emotion tags (mirrors emotion/detector.py categories) ---- */
+  --emotion-joy:     #B08A2E;
+  --emotion-joy-soft: #FBF3E1;
+  --emotion-sadness: #5B7196;
+  --emotion-sadness-soft: #E9EEF5;
+  --emotion-anxiety: #8A6BAE;
+  --emotion-anxiety-soft: #F1EBF7;
+  --emotion-anger:   #A8442F;
+  --emotion-anger-soft: #FBEAE5;
+  --emotion-neutral: var(--ink-500);
+  --emotion-neutral-soft: var(--ink-50);
+
+  /* ---- Borders ---- */
+  --border-subtle:  var(--sand-200);
+  --border-default: var(--ink-100);
+  --border-strong:  var(--ink-300);
+  --border-focus:   var(--clay-500);
+}

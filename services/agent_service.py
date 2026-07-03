@@ -29,6 +29,7 @@ from memory.retriever import retrieve_user_memories
 from memory.extractor import extract_and_store_memories
 from services.conversation_arc import get_arc, clear_arc
 from services.analytics import record_emotion
+from services import call_events
 
 ANTHROPIC_API_KEY = os.getenv("ANTHROPIC_API_KEY")
 
@@ -271,6 +272,10 @@ async def get_ai_response_streaming(
         _call_histories[call_sid] = history[-20:]
 
     record_emotion(call_sid, emotion_data["wellness_category"], user_name)
+    call_events.publish(call_sid, "emotion", {
+        "emotion": emotion_data["wellness_category"], "confidence": emotion_data["confidence"],
+    })
+    call_events.publish(call_sid, "stage", {"stage": arc.get_stage_name()})
     print(f"[Agent] Stage: {arc.get_stage_name()} | Emotion: {emotion_data['wellness_category']}")
     print(f"[Agent] Streamed: {ai_text[:80]}...")
 

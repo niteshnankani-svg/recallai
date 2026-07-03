@@ -1,11 +1,12 @@
 import os
-import secrets
-import base64
 from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import Response, RedirectResponse
+from fastapi.responses import Response
+from fastapi.staticfiles import StaticFiles
 import gradio as gr
+from core.auth import ADMIN_PASS, check_basic_auth
 from routers.calls import router as calls_router
+from routers.web_api import router as web_api_router
 from admin_panel import demo as admin_demo
 
 app = FastAPI(
@@ -22,8 +23,6 @@ app.add_middleware(
 )
 
 # --- Auth + Gradio queue fix middleware ---
-ADMIN_USER = os.getenv("ADMIN_USER", "admin")
-ADMIN_PASS = os.getenv("ADMIN_PASS", "")
 
 # Gradio internal paths that must bypass auth
 _GRADIO_INTERNAL = ("/admin/queue/", "/admin/api/", "/admin/upload", "/admin/file=",
@@ -31,6 +30,11 @@ _GRADIO_INTERNAL = ("/admin/queue/", "/admin/api/", "/admin/upload", "/admin/fil
 
 # Gradio sends queue/api requests to root — rewrite to /admin prefix
 _GRADIO_REWRITE = ("/queue/", "/api/predict", "/api/queue")
+
+# Path prefixes protected by Basic Auth (Gradio console + REST/WS admin API).
+# NOTE: this middleware only runs for HTTP scope — /api/admin/events (WS)
+# checks auth itself, see routers/web_api.py.
+_ADMIN_PROTECTED = ("/admin", "/api/admin")
 
 
 @app.middleware("http")
@@ -45,35 +49,24 @@ async def gradio_rewrite_and_auth(request: Request, call_next):
         scope["raw_path"] = new_path.encode()
         return await call_next(request)
 
-    # Auth for /admin pages (skip Gradio internal paths)
-    if path.startswith("/admin") and ADMIN_PASS:
+    # Auth for /admin and /api/admin (skip Gradio internal paths)
+    if any(path.startswith(p) for p in _ADMIN_PROTECTED) and ADMIN_PASS:
         if any(path.startswith(p) for p in _GRADIO_INTERNAL):
             return await call_next(request)
 
         auth = request.headers.get("Authorization", "")
-        if not auth.startswith("Basic "):
+        if not check_basic_auth(auth):
             return Response(
                 status_code=401,
                 headers={"WWW-Authenticate": 'Basic realm="RecallAI Admin"'},
-                content="Authentication required",
-            )
-        try:
-            decoded = base64.b64decode(auth.split(" ", 1)[1]).decode()
-            username, password = decoded.split(":", 1)
-            if not (secrets.compare_digest(username, ADMIN_USER)
-                    and secrets.compare_digest(password, ADMIN_PASS)):
-                raise ValueError()
-        except Exception:
-            return Response(
-                status_code=401,
-                headers={"WWW-Authenticate": 'Basic realm="RecallAI Admin"'},
-                content="Invalid credentials",
+                content="Authentication required" if not auth else "Invalid credentials",
             )
 
     return await call_next(request)
 
 
 app.include_router(calls_router)
+app.include_router(web_api_router)
 app = gr.mount_gradio_app(app, admin_demo, path="/admin")
 
 
@@ -110,3 +103,13 @@ async def health():
         "layers_complete": ["Layer 1 — Voice Pipeline", "Layer 2 — Agent + Emotion"],
         "layers_pending": ["Layer 3 — Memory", "Layer 4 — Redis", "Layer 5 — Gradio + Docker"],
     }
+
+
+# Serve the built React frontend as the catch-all for everything not matched
+# above. Mounted LAST — Starlette matches routes in registration order, and a
+# Mount("/") registered earlier would swallow every other path (including
+# /health) before its route ever got a chance. No-op until frontend/dist
+# exists (i.e. `npm run build` has been run — see Dockerfile).
+_FRONTEND_DIST = os.path.join(os.path.dirname(__file__), "frontend", "dist")
+if os.path.isdir(_FRONTEND_DIST):
+    app.mount("/", StaticFiles(directory=_FRONTEND_DIST, html=True), name="frontend")

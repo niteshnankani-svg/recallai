@@ -19,6 +19,7 @@ from services.call_registry import (
 )
 from services.analytics import record_call_start, record_call_end
 from services.name_extractor import extract_name
+from services import call_events
 
 router = APIRouter(prefix="/calls", tags=["calls"])
 BASE_URL = os.getenv("BASE_URL")
@@ -55,6 +56,7 @@ async def call_status(request: Request):
         clear_call_history(call_sid, user_name=user_name, phone=phone)
         clear_session_language(call_sid)
         unregister_call(call_sid)
+        call_events.publish(call_sid, "call_ended")
     return Response(status_code=200)
 
 
@@ -122,6 +124,7 @@ async def media_stream(websocket: WebSocket):
         if is_speaking.is_set() and speaking_task and not speaking_task.done():
             interrupted.set()
             print("[Barge-in] User interrupted — cancelling AI speech")
+            call_events.publish(call_sid or "unknown", "barge_in")
             try:
                 await asyncio.wait_for(speaking_task, timeout=1.0)
             except (asyncio.TimeoutError, asyncio.CancelledError):
@@ -181,6 +184,7 @@ async def media_stream(websocket: WebSocket):
             await _interrupt_current_speech()
 
         print(f"[RecallAI] User said: {transcript}")
+        call_events.publish(call_sid or "unknown", "transcript", {"text": transcript})
         _reset_silence_timer()
 
         # --- Name extraction for first-time callers ---
@@ -191,6 +195,7 @@ async def media_stream(websocket: WebSocket):
                 awaiting_name = False
                 greeting = f"Great to meet you, {name}! I'm RecallAI, your wellness companion. How are you feeling today?"
                 print(f"[RecallAI] Name captured: {name}")
+                call_events.publish(call_sid or "unknown", "name_captured", {"name": name})
                 speaking_task = asyncio.create_task(_speak(greeting))
                 return
             else:
@@ -210,6 +215,7 @@ async def media_stream(websocket: WebSocket):
             if detected == "hi":
                 call_voice_lang = "hi"
                 print("[Voice] Locked call voice to 'hi' (Sarvam)")
+                call_events.publish(call_sid or "unknown", "language_locked", {"lang": "hi"})
             else:
                 call_voice_lang = "en"
         lang = call_voice_lang
@@ -230,6 +236,7 @@ async def media_stream(websocket: WebSocket):
                         print(f"[Barge-in] Stopping mid-response")
                         break
                     print(f"[RecallAI] Streaming sentence ({lang}): {sentence}")
+                    call_events.publish(call_sid or "unknown", "ai_response", {"text": sentence})
                     completed = await stream_response_audio(
                         sentence, stream_sid, websocket, lang=lang, interrupted=interrupted,
                     )
@@ -268,7 +275,11 @@ async def media_stream(websocket: WebSocket):
                 user_name = get_user_for_call(call_sid)
                 from services.call_registry import get_call_info
                 call_info = get_call_info(call_sid) or {}
-                record_call_start(call_sid, phone, user_name, call_info.get("direction", "unknown"))
+                direction = call_info.get("direction", "unknown")
+                record_call_start(call_sid, phone, user_name, direction)
+                call_events.publish(call_sid, "call_started", {
+                    "phone": phone, "user_name": user_name, "direction": direction,
+                })
 
                 if is_known_user(phone):
                     opening = f"Hi {user_name}, this is RecallAI. How have you been since we last talked?"
