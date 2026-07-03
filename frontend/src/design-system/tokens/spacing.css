@@ -1,0 +1,39 @@
+/* RecallAI — Spacing, radius, elevation
+   Rounded but not pill-happy; soft close-contrast shadows (this is a calm,
+   paper-like surface system, not a floaty glassy one). */
+
+:root {
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 20px;
+  --space-6: 24px;
+  --space-8: 32px;
+  --space-10: 40px;
+  --space-12: 48px;
+  --space-16: 64px;
+  --space-20: 80px;
+  --space-24: 96px;
+
+  --radius-sm: 8px;
+  --radius-md: 14px;
+  --radius-lg: 20px;
+  --radius-xl: 28px;
+  --radius-full: 999px;
+
+  /* Soft, warm-toned shadows — never pure black */
+  --shadow-xs: 0 1px 2px rgba(61, 29, 16, 0.06);
+  --shadow-sm: 0 2px 8px rgba(61, 29, 16, 0.08);
+  --shadow-md: 0 8px 24px rgba(61, 29, 16, 0.10);
+  --shadow-lg: 0 16px 40px rgba(61, 29, 16, 0.14);
+  --shadow-focus: 0 0 0 3px rgba(184, 95, 53, 0.25);
+
+  /* Motion — slow, unhurried, no bounce (matches the brand voice) */
+  --ease-standard: cubic-bezier(0.4, 0, 0.2, 1); /* @kind other */
+  --ease-gentle: cubic-bezier(0.33, 0, 0.2, 1); /* @kind other */
+  --duration-fast: 150ms; /* @kind other */
+  --duration-base: 240ms; /* @kind other */
+  --duration-slow: 420ms; /* @kind other */
+  --duration-breath: 3400ms; /* @kind other */
+}

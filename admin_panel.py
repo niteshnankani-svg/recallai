@@ -1,80 +1,30 @@
-import os
 import gradio as gr
-import chromadb
 from services.call_registry import set_user_name, get_all_user_names
 from services.analytics import get_recent_calls, get_emotion_distribution, get_stats
+from services.telephony import trigger_outbound_call
+from services.system_status import get_env_status
+from memory.browser import list_all_memories
 
 
 def trigger_call(phone_number: str) -> str:
-    try:
-        from twilio.rest import Client
-
-        sid = os.environ.get("TWILIO_ACCOUNT_SID")
-        token = os.environ.get("TWILIO_AUTH_TOKEN")
-        from_number = os.environ.get("TWILIO_PHONE_NUMBER")
-        base_url = os.environ.get("BASE_URL")
-
-        if not all([sid, token, from_number, base_url]):
-            return "Error: Missing Twilio or BASE_URL environment variables."
-
-        client = Client(sid, token)
-        call = client.calls.create(
-            to=phone_number,
-            from_=from_number,
-            url=f"{base_url}/calls/webhook",
-            status_callback=f"{base_url}/calls/status",
-            status_callback_event=["initiated", "ringing", "answered", "completed"],
-        )
-        return f"Call initiated! SID: {call.sid}"
-    except Exception as e:
-        return f"Error: {e}"
+    result = trigger_outbound_call(phone_number)
+    if result["ok"]:
+        return f"Call initiated! SID: {result['sid']}"
+    return f"Error: {result['error']}"
 
 
 def refresh_memories():
-    try:
-        chroma_dir = os.environ.get("CHROMA_PERSIST_DIR", "./data/chromadb")
-        client = chromadb.PersistentClient(path=chroma_dir)
-
-        try:
-            collection = client.get_collection("user_memories")
-        except Exception:
-            return [["—", "—", "No memories stored yet."]]
-
-        result = collection.get(include=["documents", "metadatas"])
-
-        if not result["documents"]:
-            return [["—", "—", "No memories stored yet."]]
-
-        rows = []
-        for doc, meta in zip(result["documents"], result["metadatas"]):
-            date = meta.get("timestamp", "")[:10] if meta else "—"
-            user = meta.get("user", "—") if meta else "—"
-            rows.append([date, user, doc])
-
-        rows.sort(key=lambda r: r[0], reverse=True)
-        return rows
-    except Exception as e:
-        return [["Error", "—", str(e)]]
+    rows = list_all_memories()
+    if not rows:
+        return [["—", "—", "No memories stored yet."]]
+    return [[r["date"], r["user"], r["fact"]] for r in rows]
 
 
 def check_status():
-    keys = [
-        "ANTHROPIC_API_KEY",
-        "DEEPGRAM_API_KEY",
-        "ELEVENLABS_API_KEY",
-        "TWILIO_ACCOUNT_SID",
-        "BASE_URL",
-    ]
     lines = []
-    for key in keys:
-        status = "✅" if os.environ.get(key) else "❌"
+    for key, ok in get_env_status().items():
+        status = "✅" if ok else "❌"
         lines.append(f"{status}  {key}")
-
-    # Redis status
-    from services import redis_store
-    redis_status = "✅" if redis_store.is_available() else "❌"
-    lines.append(f"{redis_status}  REDIS (persistent store)")
-
     return "\n".join(lines)
 
 

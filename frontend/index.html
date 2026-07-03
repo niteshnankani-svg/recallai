@@ -1,0 +1,20 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>RecallAI — Call</title>
+<link rel="stylesheet" href="/src/design-system/styles.css" />
+<style>
+  html,body{margin:0;height:100%;background:var(--ink-900)}
+  #root{width:480px;height:760px;margin:0 auto;background:var(--surface-app);overflow:hidden;position:relative;
+    box-shadow:0 30px 80px rgba(0,0,0,.35); border-radius:0}
+  @media (min-width:520px){ body{display:flex;align-items:center;justify-content:center;padding:24px;box-sizing:border-box}
+    #root{border-radius:36px} }
+</style>
+</head>
+<body>
+<div id="root"></div>
+<script type="module" src="/src/web-call/main.jsx"></script>
+</body>
+</html>
