@@ -69,13 +69,6 @@ app.include_router(calls_router)
 app.include_router(web_api_router)
 app = gr.mount_gradio_app(app, admin_demo, path="/admin")
 
-# Serve the built React frontend (task: Scaffold frontend/) as the catch-all
-# for everything not matched above. Mounted last so /calls, /api, /admin,
-# /health keep priority. No-op until frontend/dist exists.
-_FRONTEND_DIST = os.path.join(os.path.dirname(__file__), "frontend", "dist")
-if os.path.isdir(_FRONTEND_DIST):
-    app.mount("/", StaticFiles(directory=_FRONTEND_DIST, html=True), name="frontend")
-
 
 @app.on_event("startup")
 async def warmup_models():
@@ -110,3 +103,13 @@ async def health():
         "layers_complete": ["Layer 1 — Voice Pipeline", "Layer 2 — Agent + Emotion"],
         "layers_pending": ["Layer 3 — Memory", "Layer 4 — Redis", "Layer 5 — Gradio + Docker"],
     }
+
+
+# Serve the built React frontend as the catch-all for everything not matched
+# above. Mounted LAST — Starlette matches routes in registration order, and a
+# Mount("/") registered earlier would swallow every other path (including
+# /health) before its route ever got a chance. No-op until frontend/dist
+# exists (i.e. `npm run build` has been run — see Dockerfile).
+_FRONTEND_DIST = os.path.join(os.path.dirname(__file__), "frontend", "dist")
+if os.path.isdir(_FRONTEND_DIST):
+    app.mount("/", StaticFiles(directory=_FRONTEND_DIST, html=True), name="frontend")
