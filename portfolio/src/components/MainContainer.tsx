@@ -1,4 +1,4 @@
-import { PropsWithChildren, useEffect } from "react";
+import { useEffect } from "react";
 import Cursor from "./Cursor";
 import Navbar from "./Navbar";
 import SocialRail from "./SocialRail";
@@ -6,14 +6,14 @@ import Hero from "./Hero";
 import Before from "./Before";
 import Pivot from "./Pivot";
 import Work from "./Work";
+import TechStack from "./TechStack";
 import HowIWork from "./HowIWork";
 import Contact from "./Contact";
 import setSplitText from "./utils/splitText";
 
-// Adapted from the reference MainContainer.tsx: fixed-position 3D scene (children)
-// as a background layer, everything else scrolls inside the ScrollSmoother
-// wrapper/content pair. setSplitText wires the scroll reveals for .para/.title.
-const MainContainer = ({ children }: PropsWithChildren) => {
+// Everything scrolls inside the ScrollSmoother wrapper/content pair. The 3D hero
+// scene lives inside <Hero>; the tech-stack ball-pit inside <TechStack>.
+const MainContainer = () => {
   useEffect(() => {
     const handler = () => setSplitText();
     handler();
@@ -26,14 +26,13 @@ const MainContainer = ({ children }: PropsWithChildren) => {
       <Cursor />
       <Navbar />
       <SocialRail />
-      {/* fixed 3D background */}
-      {children}
       <div id="smooth-wrapper">
         <div id="smooth-content">
           <Hero />
           <Before />
           <Pivot />
           <Work />
+          <TechStack />
           <HowIWork />
           <Contact />
         </div>

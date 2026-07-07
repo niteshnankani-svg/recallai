@@ -1,12 +1,19 @@
+import { lazy, Suspense } from "react";
 import { hero } from "../data/content";
 import "./styles/Hero.css";
 
-// Section 1 — adapted from the reference Landing.tsx. The 3D morph object is the
-// fixed background (Scene3D); this is the copy layer that sits over it. The
-// .hero-section is also the ScrollTrigger scrub target that drives the morph.
+// Section 1 — the 3D character scene sits behind the copy and scrolls away with
+// the hero. Lazy-loaded so the heavy three.js bundle doesn't block first paint.
+const Scene3D = lazy(() => import("./Scene3D"));
+
 const Hero = () => {
   return (
     <section className="hero-section" id="hero">
+      <div className="hero-canvas">
+        <Suspense fallback={null}>
+          <Scene3D />
+        </Suspense>
+      </div>
       <div className="hero-container">
         <p className="hero-eyebrow">{hero.eyebrow}</p>
         <div className="hero-name">

@@ -1,19 +1,12 @@
-import { lazy, Suspense } from "react";
 import { LoadingProvider } from "./context/LoadingProvider";
 import MainContainer from "./components/MainContainer";
 
-// Mirrors the reference App.tsx: LoadingProvider gates the whole app, the heavy
-// 3D scene is lazy-loaded and passed into MainContainer as a fixed background layer.
-const Scene3D = lazy(() => import("./components/Scene3D"));
-
+// LoadingProvider gates the app; the 3D hero scene is now lazy-loaded inside the
+// Hero section (see components/Hero.tsx), so App just mounts the container.
 const App = () => {
   return (
     <LoadingProvider>
-      <MainContainer>
-        <Suspense fallback={null}>
-          <Scene3D />
-        </Suspense>
-      </MainContainer>
+      <MainContainer />
     </LoadingProvider>
   );
 };

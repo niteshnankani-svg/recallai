@@ -12,6 +12,11 @@ export let smoother: ScrollSmoother;
 
 const Navbar = () => {
   useEffect(() => {
+    // `?flat` skips smooth-scroll (used for automated screenshot verification).
+    if (new URLSearchParams(window.location.search).has("flat")) {
+      document.body.style.overflowY = "auto";
+      return;
+    }
     smoother = ScrollSmoother.create({
       wrapper: "#smooth-wrapper",
       content: "#smooth-content",

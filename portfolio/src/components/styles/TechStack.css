@@ -1,0 +1,39 @@
+.tech-section {
+  position: relative;
+  z-index: 3;
+  width: 100%;
+  padding: clamp(70px, 11vh, 150px) 0 clamp(40px, 6vh, 90px);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  background: linear-gradient(180deg, transparent, rgba(7, 11, 20, 0.6) 14%, rgba(7, 11, 20, 0.6) 86%, transparent);
+}
+.tech-header {
+  width: var(--cWidth);
+  max-width: var(--cMaxWidth);
+  margin-bottom: 8px;
+}
+.tech-title {
+  font-size: clamp(30px, 5vw, 66px);
+  font-weight: 700;
+  letter-spacing: -1px;
+  margin-top: 14px;
+}
+.tech-title span {
+  color: var(--accentColor);
+}
+.tech-canvas {
+  width: 100%;
+  max-width: 1100px;
+  height: min(60vh, 560px);
+  cursor: none;
+}
+.tech-canvas canvas {
+  display: block;
+}
+@media (pointer: coarse) {
+  .tech-canvas {
+    cursor: auto;
+    height: 52vh;
+  }
+}
