@@ -1,0 +1,54 @@
+/* Shared layout for the narrative sections (Before / Pivot / How I Work). */
+.story-section {
+  position: relative;
+  z-index: 3;
+  width: 100%;
+  padding: clamp(90px, 16vh, 200px) 0;
+  display: flex;
+  justify-content: center;
+}
+.story-container {
+  width: var(--cWidth);
+  max-width: 1040px;
+}
+.section-kicker {
+  display: inline-block;
+  font-size: 13px;
+  letter-spacing: 4px;
+  text-transform: uppercase;
+  color: var(--accentColor);
+  margin-bottom: 30px;
+  padding-left: 2px;
+  border-left: 2px solid var(--accentWarm);
+  padding: 4px 0 4px 14px;
+}
+.story-body {
+  font-size: clamp(20px, 2.6vw, 38px);
+  line-height: 1.45;
+  font-weight: 400;
+  letter-spacing: 0.2px;
+  color: var(--textColor);
+}
+.pivot-section .story-container {
+  max-width: 1200px;
+}
+.pivot-line {
+  font-size: clamp(24px, 3.6vw, 54px);
+  line-height: 1.25;
+  font-weight: 600;
+  letter-spacing: -0.5px;
+}
+.howiwork-body {
+  font-weight: 500;
+}
+/* subtle backing so text stays legible over the 3D layer */
+.before-section,
+.howiwork-section {
+  background: linear-gradient(
+    180deg,
+    transparent,
+    rgba(7, 11, 20, 0.55) 20%,
+    rgba(7, 11, 20, 0.55) 80%,
+    transparent
+  );
+}

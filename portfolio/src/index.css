@@ -1,0 +1,86 @@
+/* Global tokens + reset. Token approach adapted from the reference portfolio
+   (--backgroundColor / --accentColor / --cWidth / --cMaxWidth / --vh). */
+:root {
+  --backgroundColor: #070b14;
+  --backgroundSoft: #0c1220;
+  --accentColor: #22d3ee;
+  --accentWarm: #e08a3c;
+  --textColor: #e8edf4;
+  --textMuted: #8b97a8;
+  --cWidth: 88%;
+  --cMaxWidth: 1500px;
+  --vh: 100vh;
+  --font: "Inter", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  margin: 0;
+  padding: 0;
+  width: 100%;
+  overflow-x: hidden;
+}
+
+body {
+  background-color: #04070d;
+  color: var(--textColor);
+  font-family: var(--font);
+  -webkit-font-smoothing: antialiased;
+  overflow-y: hidden; /* released by initialFX after load */
+  cursor: none;
+}
+
+@media (pointer: coarse) {
+  body {
+    cursor: auto;
+  }
+}
+
+a {
+  color: inherit;
+  text-decoration: none;
+}
+
+h1,
+h2,
+h3,
+h4,
+p {
+  margin: 0;
+}
+
+.container-main {
+  position: relative;
+  width: 100%;
+}
+
+#smooth-wrapper {
+  position: relative;
+  z-index: 2;
+}
+
+.main-body {
+  position: relative;
+}
+
+/* SplitText helpers (mirror the reference: hide overflow so chars/words wipe
+   up from below their line box). */
+.split-line {
+  overflow: hidden;
+  padding: 4px 0;
+  margin: -4px 0;
+}
+
+.para,
+.title {
+  will-change: transform;
+}
+
+::selection {
+  background: var(--accentColor);
+  color: #04070d;
+}

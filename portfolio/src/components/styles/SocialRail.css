@@ -1,0 +1,36 @@
+.social-rail {
+  position: fixed;
+  right: 26px;
+  bottom: 0;
+  z-index: 30;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 20px;
+  padding-bottom: 20px;
+}
+.social-rail a {
+  font-size: 18px;
+  color: var(--textMuted);
+  transition: color 0.3s ease, transform 0.3s ease;
+}
+.social-rail a:hover {
+  color: var(--accentColor);
+  transform: translateY(-3px);
+}
+.social-rail-line {
+  width: 1px;
+  height: 90px;
+  background: rgba(255, 255, 255, 0.2);
+}
+.social-rail-label {
+  writing-mode: vertical-rl;
+  font-size: 12px;
+  letter-spacing: 2px;
+  color: var(--textMuted);
+}
+@media screen and (max-width: 900px) {
+  .social-rail {
+    display: none;
+  }
+}

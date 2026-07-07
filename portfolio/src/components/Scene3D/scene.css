@@ -1,0 +1,28 @@
+/* The 3D canvas is a fixed full-viewport background layer; all content scrolls
+   over it. Mirrors how the reference fixes .character-model on desktop. */
+.scene3d-container {
+  position: fixed;
+  inset: 0;
+  z-index: 1;
+  pointer-events: none;
+}
+
+.scene3d-container canvas {
+  width: 100% !important;
+  height: 100% !important;
+  display: block;
+}
+
+/* radial vignette so particles read against the copy */
+.scene3d-container::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(
+    circle at 50% 45%,
+    transparent 55%,
+    rgba(4, 7, 13, 0.35) 82%,
+    rgba(4, 7, 13, 0.7) 100%
+  );
+  pointer-events: none;
+}
