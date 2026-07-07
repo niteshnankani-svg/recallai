@@ -9,6 +9,27 @@ export const hero = {
     "5 production AI systems shipped. 12+ years building businesses before that.",
 };
 
+export const summary = {
+  kicker: "In short",
+  body: `AI Engineer with 5 production systems deployed across voice AI, RAG pipelines, and multi-agent orchestration. I built India's first Hindi voice AI wellness agent — the full STT → LLM → TTS loop over real telephony — with deep hands-on work in Hindi + Hinglish NLP. Backed by 12 years of business operations, I build systems that have to work in production, not just in demos.`,
+};
+
+export const education = {
+  kicker: "Education",
+  items: [
+    {
+      title: "MBA — Marketing",
+      org: "Pune University",
+      period: "Graduated 2012",
+    },
+    {
+      title: "AI / ML — Self-directed",
+      org: "Edureka Agentic AI · DeepLearning.AI · Anthropic Docs",
+      period: "2025 – Present",
+    },
+  ],
+};
+
 export const before = {
   kicker: "The Before",
   body: `For over a decade, I ran Kishor & Company — a B2B apparel manufacturing business serving 200+ wholesale clients across Maharashtra, Karnataka, and Andhra Pradesh, under brands KRYSTAL, FOXX, and CUTEBOY. I learned how real businesses actually work: margins, logistics, client relationships, and the discipline of shipping something someone pays for. That discipline didn't disappear when I moved into AI — it's the whole reason I build systems that go to production, not just notebooks.`,

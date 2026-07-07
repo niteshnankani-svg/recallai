@@ -83,6 +83,35 @@
   font-size: clamp(15px, 1.6vw, 20px);
   line-height: 1.5;
 }
+.work-card-details {
+  margin: 16px 0 0;
+  padding: 0;
+  list-style: none;
+  max-width: 680px;
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+}
+.work-card-details li {
+  position: relative;
+  padding-left: 18px;
+  color: var(--textMuted);
+  font-size: clamp(13px, 1.35vw, 15px);
+  line-height: 1.5;
+}
+.work-card-details li::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 9px;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--accentColor);
+}
+.work-card:hover .work-card-details li {
+  color: var(--textColor);
+}
 .work-card-tags {
   display: flex;
   flex-wrap: wrap;

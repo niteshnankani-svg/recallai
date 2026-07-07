@@ -1,0 +1,114 @@
+.xp-section {
+  position: relative;
+  z-index: 3;
+  width: 100%;
+  padding: clamp(70px, 12vh, 150px) 0;
+  display: flex;
+  justify-content: center;
+}
+.xp-container {
+  width: var(--cWidth);
+  max-width: 1040px;
+}
+.xp-heading {
+  font-size: clamp(30px, 5vw, 66px);
+  font-weight: 700;
+  letter-spacing: -1px;
+  margin-top: 14px;
+}
+.xp-heading span {
+  color: var(--accentColor);
+}
+.xp-timeline {
+  position: relative;
+  margin-top: 56px;
+  padding-left: 34px;
+}
+/* the growing spine */
+.xp-spine {
+  position: absolute;
+  left: 6px;
+  top: 6px;
+  bottom: 6px;
+  width: 2px;
+  background: rgba(255, 255, 255, 0.12);
+}
+.xp-spine-fill {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(var(--accentWarm), var(--accentColor));
+  transform-origin: top center;
+}
+.xp-entry {
+  position: relative;
+  padding-bottom: 40px;
+}
+.xp-entry:last-child {
+  padding-bottom: 0;
+}
+.xp-dot {
+  position: absolute;
+  left: -34px;
+  top: 6px;
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background: var(--backgroundColor);
+  border: 2px solid var(--accentColor);
+  box-shadow: 0 0 0 4px rgba(34, 211, 238, 0.12);
+  transform: translateX(-1px);
+}
+.xp-card-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+.xp-card-head h3 {
+  font-size: clamp(18px, 2.3vw, 26px);
+  font-weight: 600;
+}
+.xp-org {
+  color: var(--accentColor);
+  font-weight: 500;
+}
+.xp-period {
+  font-size: 13px;
+  letter-spacing: 1px;
+  color: var(--textMuted);
+  white-space: nowrap;
+  font-variant-numeric: tabular-nums;
+}
+.xp-tag {
+  margin-top: 6px;
+  font-size: 13px;
+  letter-spacing: 0.5px;
+  color: var(--accentWarm);
+  text-transform: uppercase;
+}
+.xp-points {
+  margin: 16px 0 0;
+  padding: 0;
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.xp-points li {
+  position: relative;
+  padding-left: 18px;
+  color: var(--textMuted);
+  font-size: clamp(14px, 1.5vw, 16px);
+  line-height: 1.55;
+}
+.xp-points li::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 9px;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--accentColor);
+}

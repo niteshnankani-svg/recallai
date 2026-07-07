@@ -67,6 +67,13 @@ const Work = () => {
                   <MdArrowOutward className="work-card-arrow" />
                 </h3>
                 <p className="work-card-blurb">{project.blurb}</p>
+                {project.details && (
+                  <ul className="work-card-details">
+                    {project.details.map((d, i) => (
+                      <li key={i}>{d}</li>
+                    ))}
+                  </ul>
+                )}
                 <div className="work-card-tags">
                   {project.tags.map((tag) => (
                     <span className="work-tag" key={tag}>

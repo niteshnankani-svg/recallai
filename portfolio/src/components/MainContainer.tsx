@@ -3,10 +3,14 @@ import Cursor from "./Cursor";
 import Navbar from "./Navbar";
 import SocialRail from "./SocialRail";
 import Hero from "./Hero";
+import Summary from "./Summary";
 import Before from "./Before";
 import Pivot from "./Pivot";
 import Work from "./Work";
 import TechStack from "./TechStack";
+import Skills from "./Skills";
+import Experience from "./Experience";
+import Education from "./Education";
 import HowIWork from "./HowIWork";
 import Contact from "./Contact";
 import setSplitText from "./utils/splitText";
@@ -29,10 +33,14 @@ const MainContainer = () => {
       <div id="smooth-wrapper">
         <div id="smooth-content">
           <Hero />
+          <Summary />
           <Before />
           <Pivot />
           <Work />
           <TechStack />
+          <Skills />
+          <Experience />
+          <Education />
           <HowIWork />
           <Contact />
         </div>
