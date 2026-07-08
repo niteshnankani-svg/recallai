@@ -1,55 +1,63 @@
-import { useEffect, useRef, Suspense } from "react";
+import { useEffect, useRef } from "react";
 import { Canvas, useFrame, useThree } from "@react-three/fiber";
-import { ContactShadows, Sparkles } from "@react-three/drei";
-import Character from "./Character";
+import * as THREE from "three";
+import gsap from "gsap";
+import { ScrollTrigger } from "gsap/ScrollTrigger";
+import MorphPoints from "./MorphPoints";
 import { useLoading } from "../../context/LoadingProvider";
 import { setProgress } from "../Loading";
 import { initialFX } from "../utils/initialFX";
 import "./scene.css";
 
-// Hero 3D scene: a rigged human character at a lit "workstation", framed like
-// the reference site's character scene. Contained to the hero section (it
-// scrolls away naturally) rather than fixed behind the whole page.
+gsap.registerPlugin(ScrollTrigger);
 
-const Rig = ({ mouse }: { mouse: React.MutableRefObject<{ x: number; y: number }> }) => {
+// R3F rig: owns the scroll→progress value shared with MorphPoints (the morph is
+// scroll-scrubbed, mirroring the reference GsapScroll.ts tl1 scrub timeline) and
+// applies a gentle mouse-lerp parallax to the whole group.
+const Rig = ({ progressRef }: { progressRef: React.MutableRefObject<number> }) => {
+  const group = useRef<THREE.Group>(null);
+  const mouse = useRef({ x: 0, y: 0 });
   const { camera } = useThree();
-  const dolly = useRef(0);
+
   useEffect(() => {
-    camera.position.set(0, 0.3, 9);
-    camera.lookAt(0, -0.1, 0);
+    camera.position.set(0, 0, 9);
     const onMove = (e: MouseEvent) => {
       mouse.current.x = (e.clientX / window.innerWidth) * 2 - 1;
       mouse.current.y = (e.clientY / window.innerHeight) * 2 - 1;
     };
     document.addEventListener("mousemove", onMove);
-    return () => document.removeEventListener("mousemove", onMove);
-  }, [camera, mouse]);
-  useFrame((_, delta) => {
-    // faint parallax so the frame breathes with the cursor
-    dolly.current += (mouse.current.x * 0.25 - dolly.current) * Math.min(1, delta * 2);
-    camera.position.x = dolly.current;
-    camera.lookAt(0, -0.1, 0);
-  });
-  return null;
-};
 
-// A subtle glowing pedestal ring so the character reads as "on stage" rather
-// than floating (procedural — no extra assets).
-const Pedestal = () => (
-  <group position={[0, -1.75, 0]}>
-    <mesh rotation={[-Math.PI / 2, 0, 0]}>
-      <ringGeometry args={[1.15, 1.35, 64]} />
-      <meshStandardMaterial
-        color="#0a2233"
-        emissive="#22d3ee"
-        emissiveIntensity={1.4}
-        toneMapped={false}
-        transparent
-        opacity={0.9}
-      />
-    </mesh>
-  </group>
-);
+    const st = ScrollTrigger.create({
+      trigger: ".hero-section",
+      start: "top top",
+      end: "bottom top",
+      scrub: true,
+      onUpdate: (self) => {
+        progressRef.current = self.progress;
+      },
+    });
+    const id = setTimeout(() => ScrollTrigger.refresh(), 300);
+    return () => {
+      document.removeEventListener("mousemove", onMove);
+      clearTimeout(id);
+      st.kill();
+    };
+  }, [camera, progressRef]);
+
+  useFrame((_, delta) => {
+    if (!group.current) return;
+    const ty = mouse.current.x * 0.35 + progressRef.current * 0.5;
+    const tx = mouse.current.y * 0.2;
+    group.current.rotation.y += (ty - group.current.rotation.y) * Math.min(1, delta * 3);
+    group.current.rotation.x += (tx - group.current.rotation.x) * Math.min(1, delta * 3);
+  });
+
+  return (
+    <group ref={group}>
+      <MorphPoints progressRef={progressRef} />
+    </group>
+  );
+};
 
 const ReadyGate = () => {
   const { setLoading } = useLoading();
@@ -64,38 +72,12 @@ const ReadyGate = () => {
 };
 
 const Scene3D = () => {
-  const mouse = useRef({ x: 0, y: 0 });
+  const progressRef = useRef(0);
   return (
     <div className="scene3d-container" data-cursor="disable">
-      <Canvas
-        dpr={[1, 2]}
-        camera={{ fov: 32, position: [0, 0.2, 6.6] }}
-        gl={{ antialias: true, alpha: true }}
-      >
-        {/* lighting: soft ambient + warm key + cyan rim + screen glow */}
-        <hemisphereLight args={["#cfefff", "#0a0e17", 0.55]} />
-        <ambientLight intensity={0.35} />
-        <directionalLight position={[4, 6, 4]} intensity={1.5} color="#fff2e0" />
-        <pointLight position={[-3.5, 1.2, 3]} intensity={26} color="#22d3ee" />
-        <pointLight position={[3.5, 0.4, 2]} intensity={12} color="#e08a3c" />
-        <pointLight position={[0, 0.4, 2.2]} intensity={8} color="#8bd8ff" />
-
-        <Suspense fallback={null}>
-          <Character mouse={mouse} />
-          <Pedestal />
-          <ReadyGate />
-        </Suspense>
-
-        <ContactShadows
-          position={[0, -2.13, 0]}
-          opacity={0.55}
-          scale={9}
-          blur={2.6}
-          far={4}
-          color="#020308"
-        />
-        <Sparkles count={70} scale={[10, 6, 4]} size={2.4} speed={0.3} color="#22d3ee" opacity={0.5} />
-        <Rig mouse={mouse} />
+      <Canvas dpr={[1, 2]} camera={{ fov: 35, position: [0, 0, 9] }} gl={{ antialias: true, alpha: true }}>
+        <Rig progressRef={progressRef} />
+        <ReadyGate />
       </Canvas>
     </div>
   );

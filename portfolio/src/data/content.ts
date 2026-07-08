@@ -7,6 +7,14 @@ export const hero = {
   headline: "Nitesh Nankani — AI Solutions Engineer",
   subline:
     "5 production AI systems shipped. 12+ years building businesses before that.",
+  trust: [
+    "Python",
+    "RAG",
+    "Voice Agents",
+    "Fine-tuned BERT",
+    "FastAPI",
+    "Deployed on Railway/Vercel",
+  ],
 };
 
 export const summary = {
@@ -37,7 +45,7 @@ export const before = {
 
 export const pivot = {
   kicker: "The Pivot",
-  line: `In January 2025, I taught myself AI engineering the same way I learned manufacturing — by building, not by studying. Five production systems later, that bet paid off.`,
+  line: `In January 2024, I taught myself AI engineering the same way I learned manufacturing — by building, not by studying. Five production systems later, that bet paid off.`,
 };
 
 export const howIWork = {

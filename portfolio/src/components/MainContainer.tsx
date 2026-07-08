@@ -7,7 +7,6 @@ import Summary from "./Summary";
 import Before from "./Before";
 import Pivot from "./Pivot";
 import Work from "./Work";
-import TechStack from "./TechStack";
 import Skills from "./Skills";
 import Experience from "./Experience";
 import Education from "./Education";
@@ -37,7 +36,6 @@ const MainContainer = () => {
           <Before />
           <Pivot />
           <Work />
-          <TechStack />
           <Skills />
           <Experience />
           <Education />

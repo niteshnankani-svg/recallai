@@ -1,0 +1,58 @@
+.pipe {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0;
+  margin-top: 18px;
+}
+.pipe-step {
+  display: inline-flex;
+  align-items: center;
+}
+.pipe-node {
+  --lit: 0;
+  font-family: var(--font-head);
+  font-size: clamp(11px, 1.15vw, 13px);
+  font-weight: 600;
+  letter-spacing: 0.2px;
+  white-space: nowrap;
+  padding: 7px 13px;
+  border-radius: 999px;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  background: rgba(255, 255, 255, 0.03);
+  /* text brightens from muted → white as it lights */
+  color: color-mix(in srgb, var(--text-muted), #fff calc(var(--lit) * 100%));
+}
+.pipe-conn {
+  position: relative;
+  width: clamp(18px, 3vw, 42px);
+  height: 2px;
+  margin: 0 4px;
+  background: rgba(255, 255, 255, 0.12);
+  border-radius: 2px;
+  overflow: hidden;
+}
+.pipe-conn-fill {
+  position: absolute;
+  inset: 0;
+  transform: scaleX(0);
+  transform-origin: left center;
+  background: var(--accent);
+  box-shadow: 0 0 8px var(--accent);
+}
+
+/* touch / hover-less: show it fully lit and static */
+.pipe--static .pipe-node {
+  --lit: 1;
+  border-color: var(--accent);
+  color: #fff;
+}
+.pipe--static .pipe-conn-fill {
+  transform: scaleX(1);
+}
+
+@media screen and (max-width: 600px) {
+  .pipe {
+    gap: 6px 0;
+  }
+}

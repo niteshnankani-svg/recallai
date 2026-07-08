@@ -46,16 +46,19 @@
 .xp-entry:last-child {
   padding-bottom: 0;
 }
+.xp-card {
+  padding: 22px 26px;
+}
 .xp-dot {
   position: absolute;
   left: -34px;
-  top: 6px;
+  top: 22px;
   width: 14px;
   height: 14px;
   border-radius: 50%;
   background: var(--backgroundColor);
   border: 2px solid var(--accentColor);
-  box-shadow: 0 0 0 4px rgba(34, 211, 238, 0.12);
+  box-shadow: 0 0 0 4px rgba(45, 212, 191, 0.14);
   transform: translateX(-1px);
 }
 .xp-card-head {

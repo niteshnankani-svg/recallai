@@ -63,9 +63,9 @@ const Experience = () => {
           {experience.map((job) => (
             <div className="xp-entry" key={job.role + job.org}>
               <div className="xp-dot" />
-              <div className="xp-card">
+              <div className="xp-card glass">
                 <div className="xp-card-head">
-                  <h3>
+                  <h3 className="font-head">
                     {job.role} <span className="xp-org">· {job.org}</span>
                   </h3>
                   <span className="xp-period">{job.period}</span>

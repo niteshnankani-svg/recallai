@@ -7,7 +7,7 @@
   display: flex;
   justify-content: center;
   align-items: center;
-  background: linear-gradient(180deg, transparent, rgba(7, 11, 20, 0.85) 25%);
+  background: linear-gradient(180deg, transparent, rgba(10, 10, 15, 0.85) 25%);
 }
 .contact-container {
   width: var(--cWidth);
@@ -49,12 +49,13 @@
   transition: transform 0.3s ease, background 0.3s ease, border-color 0.3s ease;
 }
 .contact-primary {
-  background: var(--accentColor);
-  color: #04070d;
+  background: var(--grad);
+  color: #05130f;
+  font-weight: 700;
 }
 .contact-primary:hover {
   transform: translateY(-3px);
-  background: #5ee2f5;
+  filter: brightness(1.08);
 }
 .contact-secondary {
   border: 1px solid rgba(255, 255, 255, 0.25);

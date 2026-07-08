@@ -45,8 +45,8 @@ const Skills = () => {
         </h2>
         <div className="skills-grid" ref={gridRef}>
           {skillGroups.map((group) => (
-            <div className="skill-card" key={group.title}>
-              <h3 className="skill-card-title">{group.title}</h3>
+            <div className="skill-card glass" key={group.title}>
+              <h3 className="skill-card-title font-head">{group.title}</h3>
               <ul className="skill-card-list">
                 {group.items.map((item) => (
                   <li key={item}>{item}</li>

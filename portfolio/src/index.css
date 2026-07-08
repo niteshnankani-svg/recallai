@@ -1,16 +1,48 @@
-/* Global tokens + reset. Token approach adapted from the reference portfolio
-   (--backgroundColor / --accentColor / --cWidth / --cMaxWidth / --vh). */
+/* ============================================================
+   Design system — recruiter brief
+   Dark charcoal-navy base, single teal→amber accent gradient,
+   glassmorphism panels, Plus Jakarta Sans headings.
+   ============================================================ */
+
+@font-face {
+  font-family: "Plus Jakarta Sans";
+  src: url("/fonts/PlusJakartaSans-var.woff2") format("woff2");
+  font-weight: 200 800;
+  font-style: normal;
+  font-display: swap;
+}
+
 :root {
-  --backgroundColor: #070b14;
-  --backgroundSoft: #0c1220;
-  --accentColor: #22d3ee;
-  --accentWarm: #e08a3c;
-  --textColor: #e8edf4;
-  --textMuted: #8b97a8;
+  /* grounds — neutrals biased slightly toward teal, deliberately chosen */
+  --bg: #0a0a0f;
+  --bg-soft: #0e0f16;
+  --panel: rgba(255, 255, 255, 0.04);
+  --panel-strong: rgba(255, 255, 255, 0.065);
+  --border: rgba(255, 255, 255, 0.1);
+
+  /* the one accent gradient: teal → amber */
+  --teal: #2dd4bf;
+  --amber: #f7a83b;
+  --grad: linear-gradient(105deg, var(--teal) 0%, var(--amber) 100%);
+  --grad-soft: linear-gradient(105deg, rgba(45, 212, 191, 0.5), rgba(247, 168, 59, 0.42));
+
+  --text: #edeef3;
+  --text-muted: #a6adbb;
+  --text-dim: #767d8c;
+
+  --font-head: "Plus Jakarta Sans", system-ui, -apple-system, sans-serif;
+  --font-body: system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+
   --cWidth: 88%;
-  --cMaxWidth: 1500px;
+  --cMaxWidth: 1240px;
   --vh: 100vh;
-  --font: "Inter", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+
+  /* legacy aliases (old component CSS maps onto the new palette) */
+  --backgroundColor: var(--bg);
+  --accentColor: var(--teal);
+  --accentWarm: var(--amber);
+  --textColor: var(--text);
+  --textMuted: var(--text-muted);
 }
 
 * {
@@ -26,10 +58,13 @@ body {
 }
 
 body {
-  background-color: #04070d;
-  color: var(--textColor);
-  font-family: var(--font);
+  background-color: var(--bg);
+  color: var(--text);
+  font-family: var(--font-body);
+  font-size: 16px;
+  line-height: 1.5;
   -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
   overflow-y: hidden; /* released by initialFX after load */
   cursor: none;
 }
@@ -40,16 +75,37 @@ body {
   }
 }
 
+/* ambient gradient orbs so backdrop-blur has something to read against */
+body::before,
+body::after {
+  content: "";
+  position: fixed;
+  z-index: 0;
+  border-radius: 50%;
+  filter: blur(120px);
+  pointer-events: none;
+  opacity: 0.5;
+}
+body::before {
+  width: 46vw;
+  height: 46vw;
+  top: -12vw;
+  left: -10vw;
+  background: radial-gradient(circle, rgba(45, 212, 191, 0.22), transparent 70%);
+}
+body::after {
+  width: 52vw;
+  height: 52vw;
+  bottom: -16vw;
+  right: -14vw;
+  background: radial-gradient(circle, rgba(247, 168, 59, 0.16), transparent 70%);
+}
+
 a {
   color: inherit;
   text-decoration: none;
 }
-
-h1,
-h2,
-h3,
-h4,
-p {
+h1, h2, h3, h4, p {
   margin: 0;
 }
 
@@ -57,30 +113,74 @@ p {
   position: relative;
   width: 100%;
 }
-
 #smooth-wrapper {
   position: relative;
   z-index: 2;
 }
-
 .main-body {
   position: relative;
 }
 
-/* SplitText helpers (mirror the reference: hide overflow so chars/words wipe
-   up from below their line box). */
+/* headings use the display face */
+.font-head {
+  font-family: var(--font-head);
+}
+
+/* gradient accent text */
+.grad-text {
+  background: var(--grad);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+/* ---- Glass panel + 1px gradient border (masked pseudo-element) ---- */
+.glass {
+  position: relative;
+  background: var(--panel);
+  -webkit-backdrop-filter: blur(14px) saturate(120%);
+  backdrop-filter: blur(14px) saturate(120%);
+  border-radius: 18px;
+}
+.glass::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  padding: 1px;
+  background: var(--grad-soft);
+  -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+  -webkit-mask-composite: xor;
+  mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+  mask-composite: exclude;
+  opacity: 0.55;
+  pointer-events: none;
+  transition: opacity 0.35s ease;
+}
+.glass:hover::before {
+  opacity: 1;
+}
+
+/* SplitText line clipping */
 .split-line {
   overflow: hidden;
   padding: 4px 0;
   margin: -4px 0;
 }
-
 .para,
 .title {
   will-change: transform;
 }
 
 ::selection {
-  background: var(--accentColor);
-  color: #04070d;
+  background: var(--teal);
+  color: #05130f;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  * {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
 }
