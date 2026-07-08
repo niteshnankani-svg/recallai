@@ -92,6 +92,7 @@ body::before {
   top: -12vw;
   left: -10vw;
   background: radial-gradient(circle, rgba(45, 212, 191, 0.22), transparent 70%);
+  animation: orbDriftA 22s ease-in-out infinite alternate;
 }
 body::after {
   width: 52vw;
@@ -99,6 +100,13 @@ body::after {
   bottom: -16vw;
   right: -14vw;
   background: radial-gradient(circle, rgba(247, 168, 59, 0.16), transparent 70%);
+  animation: orbDriftB 27s ease-in-out infinite alternate;
+}
+@keyframes orbDriftA {
+  to { transform: translate(9vw, 7vh) scale(1.15); }
+}
+@keyframes orbDriftB {
+  to { transform: translate(-8vw, -6vh) scale(1.12); }
 }
 
 a {
@@ -126,12 +134,17 @@ h1, h2, h3, h4, p {
   font-family: var(--font-head);
 }
 
-/* gradient accent text */
+/* gradient accent text with a slow shimmer */
 .grad-text {
-  background: var(--grad);
+  background: linear-gradient(105deg, var(--teal), var(--amber), var(--teal));
+  background-size: 220% auto;
   -webkit-background-clip: text;
   background-clip: text;
   color: transparent;
+  animation: gradShimmer 6s linear infinite;
+}
+@keyframes gradShimmer {
+  to { background-position: 220% center; }
 }
 
 /* ---- Glass panel + 1px gradient border (masked pseudo-element) ---- */

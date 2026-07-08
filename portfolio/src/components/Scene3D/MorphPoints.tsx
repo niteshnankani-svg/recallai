@@ -1,6 +1,7 @@
-import { useMemo, useRef, MutableRefObject } from "react";
+import { useEffect, useMemo, useRef, MutableRefObject } from "react";
 import { useFrame } from "@react-three/fiber";
 import * as THREE from "three";
+import gsap from "gsap";
 
 // Hero object: a particle cloud that morphs as the user scrolls the hero.
 //   progress 0 -> "folded garment"  (amber — apparel manufacturing)
@@ -15,6 +16,7 @@ const vertexShader = /* glsl */ `
   uniform float uProgress;
   uniform float uTime;
   uniform float uSize;
+  uniform float uReveal;
   attribute vec3 aTarget;
   attribute float aRand;
   varying float vMix;
@@ -25,13 +27,29 @@ const vertexShader = /* glsl */ `
     float p = smoothstep(0.0, 1.0, uProgress);
     vMix = p;
     vec3 pos = mix(position, aTarget, p);
-    pos.y += sin(uTime * 0.6 + aRand * 6.2831) * 0.04;
-    pos.x += cos(uTime * 0.5 + aRand * 6.2831) * 0.03;
+
+    // continuous flow so the cloud is always alive (not frozen at rest)
+    float t = uTime;
+    pos.x += sin(t * 0.8 + aRand * 20.0) * 0.09;
+    pos.y += cos(t * 0.7 + aRand * 15.0) * 0.09;
+    pos.z += sin(t * 0.9 + aRand * 10.0) * 0.07;
+    // gentle swirl around the vertical axis
+    float ang = sin(t * 0.25 + pos.y * 0.4) * 0.06;
+    float s = sin(ang), c = cos(ang);
+    pos.xz = mat2(c, -s, s, c) * pos.xz;
+
+    // assemble-on-load: expand from a scattered shell into the shape
+    vec3 scatter = normalize(vec3(
+      sin(aRand * 91.7), cos(aRand * 47.3), sin(aRand * 63.1)
+    )) * 9.0;
+    pos = mix(scatter, pos, uReveal);
+
+    // subtle global glow pulse
+    float pulse = 0.85 + 0.15 * sin(uTime * 1.5 + aRand * 3.0);
 
     vec4 mvPosition = modelViewMatrix * vec4(pos, 1.0);
     gl_Position = projectionMatrix * mvPosition;
-    // attenuation tuned for a ~9-unit camera distance (points stay ~2-3px)
-    gl_PointSize = uSize * (0.7 + aRand * 0.6) * (9.0 / -mvPosition.z);
+    gl_PointSize = uSize * (0.7 + aRand * 0.6) * pulse * (9.0 / -mvPosition.z);
   }
 `;
 
@@ -141,12 +159,26 @@ const MorphPoints = ({
     () => ({
       uProgress: { value: 0 },
       uTime: { value: 0 },
+      uReveal: { value: 0 },
       uSize: { value: window.innerWidth < 1024 ? 2.4 : 2.8 },
       uColorA: { value: AMBER.clone() },
       uColorB: { value: TEAL.clone() },
     }),
     []
   );
+
+  // assemble-on-load entrance
+  useEffect(() => {
+    const tween = gsap.to(uniforms.uReveal, {
+      value: 1,
+      duration: 1.8,
+      ease: "power2.out",
+      delay: 0.15,
+    });
+    return () => {
+      tween.kill();
+    };
+  }, [uniforms]);
 
   useFrame((_, delta) => {
     if (!matRef.current) return;

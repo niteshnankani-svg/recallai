@@ -32,6 +32,19 @@
   width: min(72vw, 340px);
   height: auto;
   filter: drop-shadow(0 0 18px rgba(45, 212, 191, 0.25));
+  animation: mfFloat 6s ease-in-out infinite;
+}
+@keyframes mfFloat {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-8px); }
+}
+/* flowing dashes along the network edges */
+.mf-edge {
+  stroke-dasharray: 5 7;
+  animation: mfEdgeFlow 1.5s linear infinite;
+}
+@keyframes mfEdgeFlow {
+  to { stroke-dashoffset: -24; }
 }
 /* cross-fade garment <-> network on a slow loop */
 .mf-garment {

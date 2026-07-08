@@ -17,6 +17,7 @@ gsap.registerPlugin(ScrollTrigger);
 const Rig = ({ progressRef }: { progressRef: React.MutableRefObject<number> }) => {
   const group = useRef<THREE.Group>(null);
   const mouse = useRef({ x: 0, y: 0 });
+  const spin = useRef(0);
   const { camera } = useThree();
 
   useEffect(() => {
@@ -46,7 +47,9 @@ const Rig = ({ progressRef }: { progressRef: React.MutableRefObject<number> }) =
 
   useFrame((_, delta) => {
     if (!group.current) return;
-    const ty = mouse.current.x * 0.35 + progressRef.current * 0.5;
+    // slow continuous drift so the object is never static, plus mouse + scroll
+    spin.current += delta * 0.12;
+    const ty = mouse.current.x * 0.35 + progressRef.current * 0.5 + spin.current;
     const tx = mouse.current.y * 0.2;
     group.current.rotation.y += (ty - group.current.rotation.y) * Math.min(1, delta * 3);
     group.current.rotation.x += (tx - group.current.rotation.x) * Math.min(1, delta * 3);

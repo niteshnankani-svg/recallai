@@ -31,7 +31,7 @@
   transition: transform 0.35s ease, background 0.35s ease;
 }
 .skill-card:hover {
-  transform: translateY(-4px);
+  transform: translateY(-5px) scale(1.015);
   background: var(--panel-strong);
 }
 .skill-card-title {

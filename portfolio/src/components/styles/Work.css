@@ -35,7 +35,7 @@
   transition: transform 0.4s ease, background 0.4s ease;
 }
 .work-card:hover {
-  transform: translateY(-4px);
+  transform: translateY(-5px) scale(1.008);
   background: var(--panel-strong);
 }
 .work-card-index {

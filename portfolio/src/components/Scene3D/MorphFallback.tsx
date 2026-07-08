@@ -47,9 +47,11 @@ const MorphFallback = () => {
           {edges.map(([a, b], i) => (
             <line
               key={i}
+              className="mf-edge"
               x1={nodes[a][0]} y1={nodes[a][1]}
               x2={nodes[b][0]} y2={nodes[b][1]}
-              stroke="url(#mf-grad)" strokeWidth="0.8" opacity="0.75"
+              stroke="url(#mf-grad)" strokeWidth="0.8" opacity="0.8"
+              style={{ animationDelay: `${i * 0.18}s` }}
             />
           ))}
           {nodes.map(([x, y], i) => (

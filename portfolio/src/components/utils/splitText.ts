@@ -16,7 +16,36 @@ gsap.registerPlugin(ScrollTrigger, ScrollSmoother, SplitText);
 
 export default function setSplitText() {
   ScrollTrigger.config({ ignoreMobileResize: true });
-  if (window.innerWidth < 900) return;
+
+  // Mobile: SplitText per-word is heavy, so instead give every reveal target a
+  // lightweight fade/slide-up on scroll. (Previously mobile got NO reveals — the
+  // main reason the site felt static on phones.)
+  if (window.innerWidth < 900) {
+    const els = document.querySelectorAll<ParaElement>(
+      ".para, .title, .section-kicker"
+    );
+    els.forEach((el) => {
+      if (el.dataset.mReveal) return;
+      el.dataset.mReveal = "1";
+      gsap.fromTo(
+        el,
+        { autoAlpha: 0, y: 34 },
+        {
+          autoAlpha: 1,
+          y: 0,
+          duration: 0.8,
+          ease: "power3.out",
+          scrollTrigger: {
+            trigger: el,
+            start: "top 90%",
+            toggleActions: "play none none reverse",
+          },
+        }
+      );
+    });
+    return;
+  }
+
   const paras = document.querySelectorAll<ParaElement>(".para");
   const titles = document.querySelectorAll<ParaElement>(".title");
 
