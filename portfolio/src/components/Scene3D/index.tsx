@@ -1,20 +1,23 @@
 import { useEffect, useRef } from "react";
 import { Canvas, useFrame, useThree } from "@react-three/fiber";
 import * as THREE from "three";
-import gsap from "gsap";
-import { ScrollTrigger } from "gsap/ScrollTrigger";
+import { EffectComposer, Bloom } from "@react-three/postprocessing";
 import MorphPoints from "./MorphPoints";
 import { useLoading } from "../../context/LoadingProvider";
 import { setProgress } from "../Loading";
 import { initialFX } from "../utils/initialFX";
 import "./scene.css";
 
-gsap.registerPlugin(ScrollTrigger);
-
-// R3F rig: owns the scroll→progress value shared with MorphPoints (the morph is
-// scroll-scrubbed, mirroring the reference GsapScroll.ts tl1 scrub timeline) and
-// applies a gentle mouse-lerp parallax to the whole group.
-const Rig = ({ progressRef }: { progressRef: React.MutableRefObject<number> }) => {
+// Hero 3D scene. The garment→neural morph AUTO-PLAYS once the loading overlay
+// lifts (see MorphPoints intro timeline), then loops. Slow group drift + mouse
+// parallax on top.
+const Rig = ({
+  introRef,
+  count,
+}: {
+  introRef: React.MutableRefObject<boolean>;
+  count: number;
+}) => {
   const group = useRef<THREE.Group>(null);
   const mouse = useRef({ x: 0, y: 0 });
   const spin = useRef(0);
@@ -27,29 +30,13 @@ const Rig = ({ progressRef }: { progressRef: React.MutableRefObject<number> }) =
       mouse.current.y = (e.clientY / window.innerHeight) * 2 - 1;
     };
     document.addEventListener("mousemove", onMove);
-
-    const st = ScrollTrigger.create({
-      trigger: ".hero-section",
-      start: "top top",
-      end: "bottom top",
-      scrub: true,
-      onUpdate: (self) => {
-        progressRef.current = self.progress;
-      },
-    });
-    const id = setTimeout(() => ScrollTrigger.refresh(), 300);
-    return () => {
-      document.removeEventListener("mousemove", onMove);
-      clearTimeout(id);
-      st.kill();
-    };
-  }, [camera, progressRef]);
+    return () => document.removeEventListener("mousemove", onMove);
+  }, [camera]);
 
   useFrame((_, delta) => {
     if (!group.current) return;
-    // slow continuous drift so the object is never static, plus mouse + scroll
-    spin.current += delta * 0.12;
-    const ty = mouse.current.x * 0.35 + progressRef.current * 0.5 + spin.current;
+    spin.current += delta * 0.1;
+    const ty = mouse.current.x * 0.35 + spin.current;
     const tx = mouse.current.y * 0.2;
     group.current.rotation.y += (ty - group.current.rotation.y) * Math.min(1, delta * 3);
     group.current.rotation.x += (tx - group.current.rotation.x) * Math.min(1, delta * 3);
@@ -57,17 +44,23 @@ const Rig = ({ progressRef }: { progressRef: React.MutableRefObject<number> }) =
 
   return (
     <group ref={group}>
-      <MorphPoints progressRef={progressRef} />
+      <MorphPoints introRef={introRef} count={count} />
     </group>
   );
 };
 
-const ReadyGate = () => {
+const ReadyGate = ({ introRef }: { introRef: React.MutableRefObject<boolean> }) => {
   const { setLoading } = useLoading();
   useEffect(() => {
     const progress = setProgress((v) => setLoading(v));
     requestAnimationFrame(() => {
-      progress.loaded().then(() => setTimeout(() => initialFX(), 50));
+      progress.loaded().then(() => {
+        // wait for the overlay to fade out, THEN play the intro in full view
+        setTimeout(() => {
+          introRef.current = true;
+          initialFX();
+        }, 720);
+      });
     });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
@@ -75,12 +68,22 @@ const ReadyGate = () => {
 };
 
 const Scene3D = () => {
-  const progressRef = useRef(0);
+  const introRef = useRef(false);
+  const count = window.innerWidth < 768 ? 3800 : 7500;
   return (
     <div className="scene3d-container" data-cursor="disable">
       <Canvas dpr={[1, 2]} camera={{ fov: 35, position: [0, 0, 9] }} gl={{ antialias: true, alpha: true }}>
-        <Rig progressRef={progressRef} />
-        <ReadyGate />
+        <Rig introRef={introRef} count={count} />
+        <ReadyGate introRef={introRef} />
+        <EffectComposer>
+          <Bloom
+            intensity={0.8}
+            luminanceThreshold={0.12}
+            luminanceSmoothing={0.5}
+            mipmapBlur
+            radius={0.7}
+          />
+        </EffectComposer>
       </Canvas>
     </div>
   );

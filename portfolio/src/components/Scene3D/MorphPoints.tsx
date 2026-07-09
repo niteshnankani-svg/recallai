@@ -3,11 +3,11 @@ import { useFrame } from "@react-three/fiber";
 import * as THREE from "three";
 import gsap from "gsap";
 
-// Hero object: a particle cloud that morphs as the user scrolls the hero.
-//   progress 0 -> "folded garment"  (amber — apparel manufacturing)
-//   progress 1 -> "neural network"  (teal  — AI engineering)
-// This tells the career pivot visually in ~3 seconds. Pure geometry (no GLB) so
-// it stays lightweight and hits 60fps.
+// Hero object: a particle cloud whose garment→neural-network morph AUTO-PLAYS as
+// an intro (no scroll needed) and then keeps morphing on a slow loop.
+//   uReveal   : assemble from a scattered shell into the shape (entrance)
+//   uProgress : garment (amber) → neural network (teal)
+//   uFlash    : brightness burst at the moment of coalescence
 
 const AMBER = new THREE.Color("#f7a83b");
 const TEAL = new THREE.Color("#2dd4bf");
@@ -17,6 +17,7 @@ const vertexShader = /* glsl */ `
   uniform float uTime;
   uniform float uSize;
   uniform float uReveal;
+  uniform float uFlash;
   attribute vec3 aTarget;
   attribute float aRand;
   varying float vMix;
@@ -28,34 +29,33 @@ const vertexShader = /* glsl */ `
     vMix = p;
     vec3 pos = mix(position, aTarget, p);
 
-    // continuous flow so the cloud is always alive (not frozen at rest)
+    // continuous flow so the cloud is always alive
     float t = uTime;
     pos.x += sin(t * 0.8 + aRand * 20.0) * 0.09;
     pos.y += cos(t * 0.7 + aRand * 15.0) * 0.09;
     pos.z += sin(t * 0.9 + aRand * 10.0) * 0.07;
-    // gentle swirl around the vertical axis
     float ang = sin(t * 0.25 + pos.y * 0.4) * 0.06;
     float s = sin(ang), c = cos(ang);
     pos.xz = mat2(c, -s, s, c) * pos.xz;
 
-    // assemble-on-load: expand from a scattered shell into the shape
+    // assemble-on-load: fly in from a scattered shell
     vec3 scatter = normalize(vec3(
       sin(aRand * 91.7), cos(aRand * 47.3), sin(aRand * 63.1)
-    )) * 9.0;
+    )) * 11.0;
     pos = mix(scatter, pos, uReveal);
 
-    // subtle global glow pulse
     float pulse = 0.85 + 0.15 * sin(uTime * 1.5 + aRand * 3.0);
 
     vec4 mvPosition = modelViewMatrix * vec4(pos, 1.0);
     gl_Position = projectionMatrix * mvPosition;
-    gl_PointSize = uSize * (0.7 + aRand * 0.6) * pulse * (9.0 / -mvPosition.z);
+    gl_PointSize = uSize * (0.7 + aRand * 0.6) * pulse * (1.0 + uFlash * 0.9) * (9.0 / -mvPosition.z);
   }
 `;
 
 const fragmentShader = /* glsl */ `
   uniform vec3 uColorA;
   uniform vec3 uColorB;
+  uniform float uFlash;
   varying float vMix;
   varying float vRand;
 
@@ -63,14 +63,14 @@ const fragmentShader = /* glsl */ `
     vec2 c = gl_PointCoord - vec2(0.5);
     float d = length(c);
     if (d > 0.5) discard;
-    float alpha = smoothstep(0.5, 0.0, d) * 0.6;
+    float alpha = smoothstep(0.5, 0.0, d) * 0.62;
     vec3 color = mix(uColorA, uColorB, vMix);
     color *= 0.6 + vRand * 0.45;
+    color += uFlash * 0.6 * mix(uColorA, uColorB, vMix); // flash brightens
     gl_FragColor = vec4(color, alpha);
   }
 `;
 
-/** Folded-garment silhouette: stacked draped rows with the sides folded in. */
 function garmentPosition(u: number, v: number, rand: number): THREE.Vector3 {
   let x = u * 3.0;
   const y = v * 3.5;
@@ -96,8 +96,8 @@ function buildNetwork(): Net {
       const nodes: THREE.Vector3[] = [];
       const spread = 5.2;
       for (let i = 0; i < n; i++) {
-        const y = n === 1 ? 0 : (i / (n - 1) - 0.5) * spread;
-        nodes.push(new THREE.Vector3(xs[li], y, 0));
+        const yy = n === 1 ? 0 : (i / (n - 1) - 0.5) * spread;
+        nodes.push(new THREE.Vector3(xs[li], yy, 0));
       }
       return nodes;
     }),
@@ -105,12 +105,14 @@ function buildNetwork(): Net {
 }
 
 const MorphPoints = ({
-  progressRef,
+  introRef,
+  count,
 }: {
-  progressRef: MutableRefObject<number>;
+  introRef: MutableRefObject<boolean>;
+  count: number;
 }) => {
   const matRef = useRef<THREE.ShaderMaterial>(null);
-  const count = window.innerWidth < 1024 ? 5000 : 7500;
+  const started = useRef(false);
   const net = useMemo(buildNetwork, []);
 
   const { positions, targets, rands } = useMemo(() => {
@@ -160,31 +162,55 @@ const MorphPoints = ({
       uProgress: { value: 0 },
       uTime: { value: 0 },
       uReveal: { value: 0 },
-      uSize: { value: window.innerWidth < 1024 ? 2.4 : 2.8 },
+      uFlash: { value: 0 },
+      uSize: { value: window.innerWidth < 1024 ? 2.6 : 2.9 },
       uColorA: { value: AMBER.clone() },
       uColorB: { value: TEAL.clone() },
     }),
     []
   );
 
-  // assemble-on-load entrance
+  // Fallback: if the loading gate never flips (rare), still play after a beat.
   useEffect(() => {
-    const tween = gsap.to(uniforms.uReveal, {
-      value: 1,
-      duration: 1.8,
-      ease: "power2.out",
-      delay: 0.15,
+    const id = setTimeout(() => {
+      introRef.current = true;
+    }, 2600);
+    return () => clearTimeout(id);
+  }, [introRef]);
+
+  const startIntro = () => {
+    if (started.current) return;
+    started.current = true;
+    const reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    if (reduce) {
+      uniforms.uReveal.value = 1;
+      uniforms.uProgress.value = 0.7;
+      return;
+    }
+    const tl = gsap.timeline();
+    // 1) assemble into the garment
+    tl.to(uniforms.uReveal, { value: 1, duration: 1.5, ease: "power3.out" }, 0);
+    // 2) coalescence flash
+    tl.to(uniforms.uFlash, { value: 1, duration: 0.5, ease: "power2.in" }, 0.85)
+      .to(uniforms.uFlash, { value: 0, duration: 1.0, ease: "power2.out" }, 1.35);
+    // 3) auto-morph garment -> neural network
+    tl.to(uniforms.uProgress, { value: 1, duration: 2.6, ease: "power2.inOut" }, 1.5);
+    // 4) keep morphing forever (network <-> mostly-garment)
+    tl.add(() => {
+      gsap.to(uniforms.uProgress, {
+        value: 0.16,
+        duration: 6.5,
+        ease: "sine.inOut",
+        yoyo: true,
+        repeat: -1,
+      });
     });
-    return () => {
-      tween.kill();
-    };
-  }, [uniforms]);
+  };
 
   useFrame((_, delta) => {
     if (!matRef.current) return;
-    uniforms.uTime.value += delta;
-    const target = progressRef.current;
-    uniforms.uProgress.value += (target - uniforms.uProgress.value) * Math.min(1, delta * 6);
+    uniforms.uTime.value += Math.min(delta, 0.05);
+    if (introRef.current && !started.current) startIntro();
   });
 
   return (

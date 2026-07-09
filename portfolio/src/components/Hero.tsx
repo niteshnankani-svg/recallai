@@ -3,15 +3,27 @@ import { hero } from "../data/content";
 import MorphFallback from "./Scene3D/MorphFallback";
 import "./styles/Hero.css";
 
-// Section 1 — the garment→neural-network morph sits behind the copy and scrolls
-// away with the hero. Desktop loads the R3F scene lazily; mobile (<768) degrades
-// to a lightweight 2D SVG morph (keeps the hero fast on phones).
+// Section 1 — the garment→neural-network morph sits behind the copy. We run the
+// real R3F morph on every device that supports WebGL (fewer particles on small
+// screens); the 2D SVG is only a no-WebGL fallback.
 const Scene3D = lazy(() => import("./Scene3D"));
+
+function hasWebGL(): boolean {
+  try {
+    const c = document.createElement("canvas");
+    return !!(
+      window.WebGLRenderingContext &&
+      (c.getContext("webgl") || c.getContext("experimental-webgl"))
+    );
+  } catch {
+    return false;
+  }
+}
 
 const Hero = () => {
   const [is3D, setIs3D] = useState(false);
   useEffect(() => {
-    setIs3D(window.matchMedia("(min-width: 768px)").matches);
+    setIs3D(hasWebGL());
   }, []);
 
   return (
