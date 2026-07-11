@@ -11,7 +11,7 @@ export const experience: Experience[] = [
   {
     role: "Independent AI Engineer",
     org: "Freelance",
-    period: "Feb 2025 – Present",
+    period: "November 2024 – Present",
     tag: "AI / ML · Agents · Voice AI · RAG",
     points: [
       "Designed and deployed 5 production AI systems spanning voice agents, RAG pipelines, multi-agent orchestration, and Indian-language NLP.",
