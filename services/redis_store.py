@@ -131,3 +131,40 @@ def hexists(name: str, key: str) -> bool:
             print(f"[Redis] HEXISTS error: {e}")
     fb = _fallback.get(name)
     return isinstance(fb, dict) and key in fb
+
+
+# --- List operations (for rolling metric sample windows) ---
+
+def rpush_capped(name: str, value: str, cap: int):
+    """Append to a list, trimming it to the most recent `cap` entries."""
+    client = _get_client()
+    if client:
+        try:
+            pipe = client.pipeline()
+            pipe.rpush(name, value)
+            pipe.ltrim(name, -cap, -1)
+            pipe.execute()
+            return
+        except Exception as e:
+            print(f"[Redis] RPUSH error: {e}")
+    lst = _fallback.setdefault(name, [])
+    if not isinstance(lst, list):
+        lst = []
+        _fallback[name] = lst
+    lst.append(value)
+    del lst[:-cap]
+
+
+def lrange(name: str, start: int, end: int) -> list[str]:
+    client = _get_client()
+    if client:
+        try:
+            return client.lrange(name, start, end)
+        except Exception as e:
+            print(f"[Redis] LRANGE error: {e}")
+    lst = _fallback.get(name)
+    if not isinstance(lst, list):
+        return []
+    if end == -1:
+        return lst[start:]
+    return lst[start:end + 1]

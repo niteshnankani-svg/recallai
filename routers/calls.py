@@ -2,6 +2,7 @@ import asyncio
 import base64
 import json
 import os
+import time
 from dotenv import load_dotenv
 load_dotenv()
 
@@ -17,7 +18,7 @@ from services.call_registry import (
     register_call, get_user_for_call, get_phone_for_call,
     unregister_call, is_known_user, update_call_user_name,
 )
-from services.analytics import record_call_start, record_call_end
+from services.analytics import record_call_start, record_call_end, record_response_latency
 from services.name_extractor import extract_name
 from services import call_events
 
@@ -179,6 +180,9 @@ async def media_stream(websocket: WebSocket):
     async def handle_transcript(transcript: str):
         nonlocal awaiting_name, speaking_task, call_voice_lang
 
+        # Marks end-of-user-speech — the clock users actually feel starts here.
+        turn_t0 = time.monotonic()
+
         # --- Barge-in: interrupt AI if it's speaking ---
         if is_speaking.is_set():
             await _interrupt_current_speech()
@@ -225,6 +229,7 @@ async def media_stream(websocket: WebSocket):
         async def _stream_ai_response():
             interrupted.clear()
             is_speaking.set()
+            first_sentence = True
             try:
                 async for sentence, full_so_far in get_ai_response_streaming(
                     transcript=transcript,
@@ -235,6 +240,12 @@ async def media_stream(websocket: WebSocket):
                     if interrupted.is_set():
                         print(f"[Barge-in] Stopping mid-response")
                         break
+                    if first_sentence:
+                        first_sentence = False
+                        latency_ms = int((time.monotonic() - turn_t0) * 1000)
+                        record_response_latency(latency_ms, precomputed_hit=precomputed is not None)
+                        print(f"[Latency] transcript→first-audio: {latency_ms}ms "
+                              f"(precompute {'hit' if precomputed is not None else 'miss'})")
                     print(f"[RecallAI] Streaming sentence ({lang}): {sentence}")
                     call_events.publish(call_sid or "unknown", "ai_response", {"text": sentence})
                     completed = await stream_response_audio(

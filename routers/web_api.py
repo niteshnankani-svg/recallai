@@ -26,7 +26,7 @@ from services import call_events, rate_limit
 from services.telephony import trigger_outbound_call
 from services.system_status import get_env_status
 from services.call_registry import set_user_name, get_all_user_names, get_call_info
-from services.analytics import get_recent_calls, get_emotion_distribution, get_stats
+from services.analytics import get_recent_calls, get_emotion_distribution, get_stats, get_latency_stats
 from memory.browser import list_all_memories
 
 router = APIRouter(prefix="/api", tags=["web-api"])
@@ -125,6 +125,17 @@ async def admin_save_user(body: UserRequest):
 @router.get("/admin/memories")
 async def admin_memories():
     return list_all_memories()
+
+
+@router.get("/admin/metrics/latency")
+async def admin_latency_metrics(last_n: int | None = None):
+    """
+    p50/p95/p99 for transcript→first-audio latency, over the last `last_n`
+    turns (default: all cached, up to 2000). Split by whether the speculative
+    precompute (emotion/RAG run on interim transcripts) was ready in time —
+    that split shows whether the precompute design is actually saving time.
+    """
+    return get_latency_stats(last_n=last_n)
 
 
 @router.post("/admin/call")
