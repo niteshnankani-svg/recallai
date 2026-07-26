@@ -45,7 +45,7 @@ export const before = {
 
 export const pivot = {
   kicker: "The Pivot",
-  line: `In January 2024, I taught myself AI engineering the same way I learned manufacturing — by building, not by studying. Five production systems later, that bet paid off.`,
+  line: `In November 2024, I taught myself AI engineering the same way I learned manufacturing — by building, not by studying. Five production systems later, that bet paid off.`,
 };
 
 export const howIWork = {
