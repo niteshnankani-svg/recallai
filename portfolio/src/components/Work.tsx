@@ -82,10 +82,10 @@ const Work = () => {
       <div className="work-container">
         <span className="section-kicker">What I Built</span>
         <h2 className="work-heading title font-head">
-          Five systems, <span className="grad-text">in production</span>
+          Six systems, <span className="grad-text">in production</span>
         </h2>
         <p className="work-sub">
-          Hover any project to trace its architecture — each one is live and clickable.
+          Hover any project to trace its architecture — each one is clickable.
         </p>
 
         <div className="work-list" ref={listRef}>

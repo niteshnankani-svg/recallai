@@ -14,7 +14,8 @@ export const experience: Experience[] = [
     period: "November 2024 – Present",
     tag: "AI / ML · Agents · Voice AI · RAG",
     points: [
-      "Designed and deployed 5 production AI systems spanning voice agents, RAG pipelines, multi-agent orchestration, and Indian-language NLP.",
+      "Designed and deployed 6 production AI systems spanning voice agents, RAG pipelines, multi-agent orchestration, and Indian-language NLP.",
+      "Deployed a multi-agent system full-stack on AWS — EC2 (FastAPI backend), S3 + CloudFront (frontend), and Amazon Bedrock for Claude inference.",
       "Built a complete voice AI architecture: Twilio + Deepgram + LLM + Sarvam AI — full loop from inbound call to Hindi spoken response.",
       "Fine-tuned 7 BERT classification models on domain-specific datasets; deployed to the HuggingFace Model Hub.",
       "All projects publicly verifiable: live demos on HuggingFace Spaces, full source on GitHub.",

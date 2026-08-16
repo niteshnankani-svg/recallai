@@ -12,7 +12,7 @@ export const skillGroups: SkillGroup[] = [
   },
   {
     title: "LLM & Agents",
-    items: ["Claude", "GPT-4o", "LLaMA 3.1 (Groq)", "LangChain", "CrewAI", "LangGraph", "Function Calling"],
+    items: ["Claude", "Amazon Bedrock", "GPT-4o", "LLaMA 3.1 (Groq)", "LangChain", "CrewAI", "LangGraph", "Function Calling"],
   },
   {
     title: "Indian-Language NLP",
@@ -21,6 +21,10 @@ export const skillGroups: SkillGroup[] = [
   {
     title: "RAG & Memory",
     items: ["ChromaDB", "FAISS", "Redis caching", "Hierarchical RAG", "Retrieval pipelines"],
+  },
+  {
+    title: "Cloud & AWS",
+    items: ["AWS EC2", "S3", "CloudFront", "Amazon Bedrock", "Security Groups", "AWS CLI"],
   },
   {
     title: "Backend & Deployment",

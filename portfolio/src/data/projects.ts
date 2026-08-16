@@ -33,6 +33,21 @@ export const projects: Project[] = [
     github: "https://github.com/niteshnankani-svg/recallai",
   },
   {
+    id: "ticket-triage",
+    title: "Multi-Agent Ticket Triage",
+    blurb:
+      "Reads a support ticket, routes it to the right specialist agent, then answers or escalates — deployed full-stack on AWS.",
+    pipeline: [
+      "DistilBERT router",
+      "4 agents · RAG / tool-calling",
+      "Amazon Bedrock · Claude",
+      "FastAPI on EC2",
+      "S3 + CloudFront",
+    ],
+    link: "https://github.com/niteshnankani-svg/Multi_agent_ticketing_system",
+    github: "https://github.com/niteshnankani-svg/Multi_agent_ticketing_system",
+  },
+  {
     id: "bargainai",
     title: "BargainAI",
     blurb: "A WhatsApp bot that negotiates in Hinglish like a real shopkeeper.",

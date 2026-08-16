@@ -6,20 +6,21 @@ export const hero = {
   name: { first: "NITESH", last: "NANKANI" },
   headline: "Nitesh Nankani — AI Solutions Engineer",
   subline:
-    "5 production AI systems shipped. 12+ years building businesses before that.",
+    "6 production AI systems shipped. 12+ years building businesses before that.",
   trust: [
     "Python",
     "RAG",
     "Voice Agents",
     "Fine-tuned BERT",
     "FastAPI",
+    "AWS (EC2 · S3 · CloudFront)",
     "Deployed on Railway/Vercel",
   ],
 };
 
 export const summary = {
   kicker: "In short",
-  body: `AI Engineer with 5 production systems deployed across voice AI, RAG pipelines, and multi-agent orchestration. I built India's first Hindi voice AI wellness agent — the full STT → LLM → TTS loop over real telephony — with deep hands-on work in Hindi + Hinglish NLP. Backed by 12 years of business operations, I build systems that have to work in production, not just in demos.`,
+  body: `AI Engineer with 6 production systems deployed across voice AI, RAG pipelines, and multi-agent orchestration — including a full-stack AWS deployment (EC2, S3, CloudFront, Bedrock). I built India's first Hindi voice AI wellness agent — the full STT → LLM → TTS loop over real telephony — with deep hands-on work in Hindi + Hinglish NLP. Backed by 12 years of business operations, I build systems that have to work in production, not just in demos.`,
 };
 
 export const education = {
@@ -45,7 +46,7 @@ export const before = {
 
 export const pivot = {
   kicker: "The Pivot",
-  line: `In November 2024, I taught myself AI engineering the same way I learned manufacturing — by building, not by studying. Five production systems later, that bet paid off.`,
+  line: `In November 2024, I taught myself AI engineering the same way I learned manufacturing — by building, not by studying. Six production systems later, that bet paid off.`,
 };
 
 export const howIWork = {
