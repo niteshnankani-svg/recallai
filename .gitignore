@@ -4,3 +4,9 @@ __pycache__/
 *.pyc
 *.pyo
 .DS_Store
+data/books/
+data/chromadb/
+node_modules/
+frontend/dist/
+.vscode/
+.idea/
