@@ -1,0 +1,105 @@
+.work-section {
+  position: relative;
+  z-index: 3;
+  width: 100%;
+  padding: clamp(80px, 13vh, 170px) 0;
+  display: flex;
+  justify-content: center;
+}
+.work-container {
+  width: var(--cWidth);
+  max-width: var(--cMaxWidth);
+}
+.work-heading {
+  font-size: clamp(34px, 6vw, 76px);
+  font-weight: 800;
+  letter-spacing: -1.5px;
+  margin-top: 14px;
+}
+.work-sub {
+  color: var(--text-muted);
+  font-size: clamp(14px, 1.5vw, 18px);
+  margin-top: 14px;
+  margin-bottom: 44px;
+}
+.work-list {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+.work-card {
+  display: flex;
+  align-items: flex-start;
+  gap: clamp(16px, 3vw, 40px);
+  padding: clamp(22px, 3vw, 34px);
+  transition: transform 0.4s ease, background 0.4s ease;
+}
+.work-card:hover {
+  transform: translateY(-5px) scale(1.008);
+  background: var(--panel-strong);
+}
+.work-card-index {
+  font-family: var(--font-head);
+  font-size: clamp(14px, 1.4vw, 17px);
+  font-weight: 700;
+  color: var(--teal);
+  font-variant-numeric: tabular-nums;
+  padding-top: 6px;
+  min-width: 30px;
+}
+.work-card-body {
+  flex: 1;
+  min-width: 0;
+}
+.work-card-title {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: clamp(22px, 3vw, 38px);
+  font-weight: 700;
+  letter-spacing: -0.5px;
+  transition: color 0.3s ease;
+}
+.work-card:hover .work-card-title {
+  color: #fff;
+}
+.work-card-arrow {
+  font-size: 0.65em;
+  color: var(--teal);
+  opacity: 0;
+  transform: translate(-8px, 8px);
+  transition: all 0.35s ease;
+}
+.work-card:hover .work-card-arrow {
+  opacity: 1;
+  transform: translate(0, 0);
+}
+.work-card-blurb {
+  margin-top: 10px;
+  max-width: 640px;
+  color: var(--text-muted);
+  font-size: clamp(14px, 1.5vw, 18px);
+  line-height: 1.5;
+}
+.work-card:hover .work-card-blurb {
+  color: var(--text);
+}
+.work-card-github {
+  align-self: center;
+  font-size: 22px;
+  color: var(--text-dim);
+  padding: 10px;
+  transition: color 0.3s ease, transform 0.3s ease;
+}
+.work-card-github:hover {
+  color: var(--teal);
+  transform: scale(1.15);
+}
+@media screen and (max-width: 600px) {
+  .work-card {
+    flex-wrap: wrap;
+  }
+  .work-card-github {
+    align-self: flex-start;
+  }
+}

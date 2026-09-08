@@ -1,0 +1,77 @@
+/* Hero 3D canvas fills the hero section and scrolls away with it. */
+.scene3d-container {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+}
+.scene3d-container canvas {
+  width: 100% !important;
+  height: 100% !important;
+  display: block;
+}
+.scene3d-container::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(120% 90% at 55% 45%, transparent 55%, rgba(10, 10, 15, 0.4) 82%, rgba(10, 10, 15, 0.72) 100%);
+  pointer-events: none;
+}
+
+/* ---- Mobile 2D fallback ---- */
+.morph-fallback {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  pointer-events: none;
+}
+.morph-fallback svg {
+  width: min(72vw, 340px);
+  height: auto;
+  filter: drop-shadow(0 0 18px rgba(45, 212, 191, 0.25));
+  animation: mfFloat 6s ease-in-out infinite;
+}
+@keyframes mfFloat {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-8px); }
+}
+/* flowing dashes along the network edges */
+.mf-edge {
+  stroke-dasharray: 5 7;
+  animation: mfEdgeFlow 1.5s linear infinite;
+}
+@keyframes mfEdgeFlow {
+  to { stroke-dashoffset: -24; }
+}
+/* cross-fade garment <-> network on a slow loop */
+.mf-garment {
+  animation: mfGarment 7s ease-in-out infinite;
+  transform-origin: center;
+}
+.mf-network {
+  animation: mfNetwork 7s ease-in-out infinite;
+  transform-origin: center;
+}
+.mf-network circle {
+  animation: mfPulse 2.4s ease-in-out infinite;
+}
+@keyframes mfGarment {
+  0%, 32% { opacity: 1; transform: scale(1); }
+  50%, 100% { opacity: 0; transform: scale(0.92); }
+}
+@keyframes mfNetwork {
+  0%, 32% { opacity: 0; transform: scale(0.96); }
+  55%, 92% { opacity: 1; transform: scale(1); }
+  100% { opacity: 0; transform: scale(0.96); }
+}
+@keyframes mfPulse {
+  0%, 100% { opacity: 0.55; }
+  50% { opacity: 1; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .mf-garment { opacity: 0; }
+  .mf-network, .mf-network circle { opacity: 1; animation: none; }
+}

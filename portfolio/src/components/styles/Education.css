@@ -1,0 +1,43 @@
+.edu-section {
+  position: relative;
+  z-index: 3;
+  width: 100%;
+  padding: clamp(50px, 8vh, 110px) 0;
+  display: flex;
+  justify-content: center;
+}
+.edu-container {
+  width: var(--cWidth);
+  max-width: 1040px;
+}
+.edu-list {
+  margin-top: 28px;
+  display: flex;
+  flex-direction: column;
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+}
+.edu-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 16px;
+  flex-wrap: wrap;
+  padding: 22px 4px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+.edu-item-main h3 {
+  font-size: clamp(18px, 2.2vw, 24px);
+  font-weight: 600;
+}
+.edu-item-main p {
+  margin-top: 5px;
+  color: var(--textMuted);
+  font-size: clamp(14px, 1.4vw, 16px);
+}
+.edu-period {
+  font-size: 13px;
+  letter-spacing: 1px;
+  color: var(--accentColor);
+  white-space: nowrap;
+  font-variant-numeric: tabular-nums;
+}

@@ -1,0 +1,49 @@
+/* Shared layout for the narrative sections (Summary / Before / Pivot / How I Work). */
+.story-section {
+  position: relative;
+  z-index: 3;
+  width: 100%;
+  padding: clamp(80px, 15vh, 190px) 0;
+  display: flex;
+  justify-content: center;
+}
+.story-container {
+  width: var(--cWidth);
+  max-width: 1000px;
+}
+.section-kicker {
+  display: inline-block;
+  font-family: var(--font-head);
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 4px;
+  text-transform: uppercase;
+  color: var(--teal);
+  margin-bottom: 28px;
+  padding: 4px 0 4px 14px;
+  border-left: 2px solid var(--amber);
+}
+.story-body {
+  font-size: clamp(20px, 2.5vw, 36px);
+  line-height: 1.45;
+  font-weight: 400;
+  letter-spacing: 0.1px;
+  color: var(--text);
+}
+.summary-body {
+  color: var(--text-muted);
+}
+.summary-body,
+.howiwork-body {
+  font-weight: 500;
+}
+.pivot-section .story-container {
+  max-width: 1160px;
+}
+.pivot-line {
+  font-size: clamp(24px, 3.6vw, 52px);
+  line-height: 1.25;
+  font-weight: 700;
+  letter-spacing: -0.5px;
+  color: var(--text);
+}
