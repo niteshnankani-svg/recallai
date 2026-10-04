@@ -190,6 +190,46 @@ h1, h2, h3, h4, p {
   color: #05130f;
 }
 
+/* ---- section polish pass ---- */
+/* gradient accent underline under the big section headings */
+.work-heading::after,
+.skills-heading::after,
+.xp-heading::after {
+  content: "";
+  display: block;
+  width: 72px;
+  height: 3px;
+  margin-top: 22px;
+  border-radius: 3px;
+  background: var(--grad);
+  box-shadow: 0 0 18px -2px rgba(45, 212, 191, 0.55);
+}
+/* consistent hover lift across every card (stats / experience / education
+   didn't lift like the project + skill cards did) */
+.stat,
+.xp-card,
+.edu-item {
+  transition: transform 0.4s ease, background 0.4s ease;
+}
+.stat:hover,
+.xp-card:hover {
+  transform: translateY(-5px);
+}
+.edu-item:hover {
+  background: rgba(255, 255, 255, 0.03);
+}
+/* nav + social rail micro-interactions */
+.header nav a:hover {
+  color: var(--teal);
+}
+.social-rail a {
+  transition: color 0.3s ease, transform 0.3s ease;
+}
+.social-rail a:hover {
+  color: var(--teal);
+  transform: translateY(-3px);
+}
+
 @media (prefers-reduced-motion: reduce) {
   * {
     animation-duration: 0.01ms !important;
