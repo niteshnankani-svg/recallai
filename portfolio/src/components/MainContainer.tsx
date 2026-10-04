@@ -14,13 +14,16 @@ import Education from "./Education";
 import HowIWork from "./HowIWork";
 import Contact from "./Contact";
 import setSplitText from "./utils/splitText";
+import { scrollMotion } from "./utils/scrollMotion";
 
 // Everything scrolls inside the ScrollSmoother wrapper/content pair. The 3D hero
-// scene lives inside <Hero>; the tech-stack ball-pit inside <TechStack>.
+// scene lives inside <Hero>.
 const MainContainer = () => {
   useEffect(() => {
     const handler = () => setSplitText();
     handler();
+    // parallax depth (after ScrollSmoother is created by the Navbar child effect)
+    scrollMotion();
     window.addEventListener("resize", handler);
     return () => window.removeEventListener("resize", handler);
   }, []);

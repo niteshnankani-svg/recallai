@@ -31,13 +31,14 @@ const Experience = () => {
       );
       gsap.fromTo(
         ".xp-entry",
-        { autoAlpha: 0, y: 60 },
+        { autoAlpha: 0, y: 80, scale: 0.97 },
         {
           autoAlpha: 1,
           y: 0,
-          duration: 0.7,
+          scale: 1,
+          duration: 0.8,
           ease: "power3.out",
-          stagger: 0.15,
+          stagger: 0.18,
           scrollTrigger: {
             trigger: rootRef.current,
             start: window.innerWidth <= 1024 ? "top 80%" : "top 70%",

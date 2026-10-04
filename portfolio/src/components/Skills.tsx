@@ -16,13 +16,14 @@ const Skills = () => {
     const cards = gridRef.current.querySelectorAll(".skill-card");
     const anim = gsap.fromTo(
       cards,
-      { autoAlpha: 0, y: 60 },
+      { autoAlpha: 0, y: 80, scale: 0.95 },
       {
         autoAlpha: 1,
         y: 0,
-        duration: 0.7,
+        scale: 1,
+        duration: 0.8,
         ease: "power3.out",
-        stagger: 0.08,
+        stagger: 0.1,
         scrollTrigger: {
           trigger: gridRef.current,
           start: window.innerWidth <= 1024 ? "top 85%" : "top 75%",

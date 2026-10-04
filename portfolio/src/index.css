@@ -219,7 +219,7 @@ h1, h2, h3, h4, p {
   background: rgba(255, 255, 255, 0.03);
 }
 /* nav + social rail micro-interactions */
-.header nav a:hover {
+.header ul a:hover {
   color: var(--teal);
 }
 .social-rail a {

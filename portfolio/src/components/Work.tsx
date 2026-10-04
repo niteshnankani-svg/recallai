@@ -57,13 +57,14 @@ const Work = () => {
     const cards = listRef.current.querySelectorAll(".work-card");
     const anim = gsap.fromTo(
       cards,
-      { autoAlpha: 0, y: 70 },
+      { autoAlpha: 0, y: 90, scale: 0.95 },
       {
         autoAlpha: 1,
         y: 0,
-        duration: 0.85,
+        scale: 1,
+        duration: 0.9,
         ease: "power3.out",
-        stagger: 0.12,
+        stagger: 0.14,
         scrollTrigger: {
           trigger: listRef.current,
           start: window.innerWidth <= 1024 ? "top 82%" : "top 74%",
