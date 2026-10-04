@@ -19,7 +19,7 @@ gsap.registerPlugin(ScrollTrigger);
 // rise and morph into the neural network, while the code-rain intensifies.
 const isMobile = typeof window !== "undefined" && window.innerWidth < 768;
 const PLANE: Plane = isMobile
-  ? { px: 0.3, py: -1.4, w: 2.9, h: 3.9 }
+  ? { px: 0.2, py: -1.35, w: 2.25, h: 4.0 }
   : PERSON_PLANE;
 
 const Rig = ({ diveProgress }: { diveProgress: React.MutableRefObject<number> }) => {

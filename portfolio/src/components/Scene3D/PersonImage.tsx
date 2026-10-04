@@ -9,7 +9,8 @@ export interface Plane {
   w: number;
   h: number;
 }
-export const PERSON_PLANE: Plane = { px: 2.3, py: -0.1, w: 3.9, h: 5.3 };
+// width:height matches the photo aspect (900x1599) so the figure isn't stretched
+export const PERSON_PLANE: Plane = { px: 2.2, py: -0.1, w: 3.0, h: 5.35 };
 
 // The business-casual photo (background removed) shown as a flat plane in the
 // hero. Subtle cursor parallax at rest; fades out as the dive dissolves it into
