@@ -27,6 +27,30 @@
   flex-direction: column;
   gap: 18px;
 }
+
+/* Desktop: two columns — the intro pins (via GSAP) in the left rail while the
+   project list scrolls past on the right. Below 1024px it's a single column
+   with no pin (set in Work.tsx). */
+@media screen and (min-width: 1025px) {
+  .work-container {
+    display: grid;
+    grid-template-columns: minmax(300px, 38%) 1fr;
+    gap: clamp(32px, 4vw, 64px);
+    align-items: start;
+  }
+  .work-intro {
+    padding-top: clamp(40px, 12vh, 120px);
+  }
+  .work-sub {
+    margin-bottom: 0;
+    max-width: 340px;
+  }
+  .work-list {
+    padding-top: clamp(40px, 12vh, 120px);
+    padding-bottom: clamp(40px, 12vh, 120px);
+    gap: clamp(18px, 3vh, 36px);
+  }
+}
 .work-card {
   display: flex;
   align-items: flex-start;

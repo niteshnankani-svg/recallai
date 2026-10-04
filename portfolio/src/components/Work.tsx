@@ -50,44 +50,67 @@ const ProjectCard = ({ project, index }: { project: Project; index: number }) =>
 };
 
 const Work = () => {
+  const rootRef = useRef<HTMLDivElement>(null);
   const listRef = useRef<HTMLDivElement>(null);
+  const introRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    if (!listRef.current) return;
-    const cards = listRef.current.querySelectorAll(".work-card");
-    const anim = gsap.fromTo(
-      cards,
-      { autoAlpha: 0, y: 90, scale: 0.95 },
-      {
-        autoAlpha: 1,
-        y: 0,
-        scale: 1,
-        duration: 0.9,
-        ease: "power3.out",
-        stagger: 0.14,
-        scrollTrigger: {
-          trigger: listRef.current,
-          start: window.innerWidth <= 1024 ? "top 82%" : "top 74%",
-          toggleActions: "play pause resume reverse",
-        },
+    if (!rootRef.current || !listRef.current) return;
+    const desktop = window.innerWidth > 1024;
+
+    const ctx = gsap.context(() => {
+      const cards = gsap.utils.toArray<HTMLElement>(".work-card");
+
+      // Pinned "scroll moment" (desktop only): the intro column holds in place
+      // while the project list scrolls past it, so the heading anchors the
+      // reader as each system flies in. pinSpacing:false keeps layout flow.
+      if (desktop && introRef.current) {
+        ScrollTrigger.create({
+          trigger: rootRef.current,
+          start: "top top",
+          end: "bottom bottom",
+          pin: introRef.current,
+          pinSpacing: false,
+        });
       }
-    );
-    return () => {
-      anim.scrollTrigger?.kill();
-      anim.kill();
-    };
+
+      // Cards reveal one-by-one as each scrolls into view (individual triggers
+      // instead of a single stagger, so the cadence tracks the scroll).
+      cards.forEach((card) => {
+        gsap.fromTo(
+          card,
+          { autoAlpha: 0, y: 70, scale: 0.96 },
+          {
+            autoAlpha: 1,
+            y: 0,
+            scale: 1,
+            duration: 0.8,
+            ease: "power3.out",
+            scrollTrigger: {
+              trigger: card,
+              start: desktop ? "top 88%" : "top 90%",
+              toggleActions: "play pause resume reverse",
+            },
+          }
+        );
+      });
+    }, rootRef);
+
+    return () => ctx.revert();
   }, []);
 
   return (
     <section className="work-section" id="work">
-      <div className="work-container">
-        <span className="section-kicker">What I Built</span>
-        <h2 className="work-heading title font-head">
-          Six systems, <span className="grad-text">in production</span>
-        </h2>
-        <p className="work-sub">
-          Hover any project to trace its architecture — each one is clickable.
-        </p>
+      <div className="work-container" ref={rootRef}>
+        <div className="work-intro" ref={introRef}>
+          <span className="section-kicker">What I Built</span>
+          <h2 className="work-heading title font-head">
+            Six systems, <span className="grad-text">in production</span>
+          </h2>
+          <p className="work-sub">
+            Hover any project to trace its architecture — each one is clickable.
+          </p>
+        </div>
 
         <div className="work-list" ref={listRef}>
           {projects.map((project, index) => (
