@@ -3,7 +3,7 @@
   position: absolute;
   inset: 0;
   z-index: 0;
-  pointer-events: none;
+  pointer-events: auto; /* allow clicking the 3D person to trigger the dive */
 }
 .scene3d-container canvas {
   width: 100% !important;

@@ -3,6 +3,7 @@ import Cursor from "./Cursor";
 import Navbar from "./Navbar";
 import SocialRail from "./SocialRail";
 import Hero from "./Hero";
+import Stats from "./Stats";
 import Summary from "./Summary";
 import Before from "./Before";
 import Pivot from "./Pivot";
@@ -32,6 +33,7 @@ const MainContainer = () => {
       <div id="smooth-wrapper">
         <div id="smooth-content">
           <Hero />
+          <Stats />
           <Summary />
           <Before />
           <Pivot />

@@ -1,4 +1,5 @@
 import { lazy, Suspense, useEffect, useState } from "react";
+import { motion } from "framer-motion";
 import { hero } from "../data/content";
 import MorphFallback from "./Scene3D/MorphFallback";
 import "./styles/Hero.css";
@@ -53,6 +54,19 @@ const Hero = () => {
             <li key={t}>{t}</li>
           ))}
         </ul>
+
+        <motion.button
+          className="hero-dive-btn"
+          initial={{ opacity: 0, y: 14 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 1.1, duration: 0.6 }}
+          whileHover={{ scale: 1.04 }}
+          whileTap={{ scale: 0.97 }}
+          onClick={() => window.dispatchEvent(new Event("portfolio-dive"))}
+        >
+          Dive in
+          <span className="hero-dive-arrow">↓</span>
+        </motion.button>
       </div>
 
       <div className="scroll-hint" data-cursor="disable">
