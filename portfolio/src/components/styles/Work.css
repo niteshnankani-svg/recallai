@@ -45,10 +45,13 @@
     margin-bottom: 0;
     max-width: 340px;
   }
+  /* Generous vertical rhythm so the list column is tall: the intro stays
+     pinned across a longer scroll and each card gets its own distinct
+     entrance one-by-one, rather than all six flashing in at once. */
   .work-list {
-    padding-top: clamp(40px, 12vh, 120px);
-    padding-bottom: clamp(40px, 12vh, 120px);
-    gap: clamp(18px, 3vh, 36px);
+    padding-top: clamp(60px, 18vh, 200px);
+    padding-bottom: clamp(48px, 11vh, 140px);
+    gap: clamp(48px, 11vh, 150px);
   }
 }
 .work-card {
