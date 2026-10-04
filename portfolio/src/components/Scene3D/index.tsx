@@ -4,8 +4,8 @@ import * as THREE from "three";
 import { EffectComposer, Bloom } from "@react-three/postprocessing";
 import gsap from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
-import Person, { PERSON_TRANSFORM } from "./Person";
-import PersonParticles from "./PersonParticles";
+import PersonImage, { PERSON_PLANE, Plane } from "./PersonImage";
+import ImageParticles from "./ImageParticles";
 import { useLoading } from "../../context/LoadingProvider";
 import { setProgress } from "../Loading";
 import { initialFX } from "../utils/initialFX";
@@ -14,25 +14,22 @@ import "./scene.css";
 
 gsap.registerPlugin(ScrollTrigger);
 
-// Hero scene: a visible 3D person (Person) over a particle system sampled from
-// its surface (PersonParticles). The "dive" — click / "Dive in" button / scroll —
-// dissolves the person into particles that morph into the neural network, then
-// scrolls into the site.
+// Hero scene: the business-casual photo over particles sampled from it. The dive
+// (click / "Dive in" / scroll) dissolves the photo into glowing particles that
+// rise and morph into the neural network, while the code-rain intensifies.
 const isMobile = typeof window !== "undefined" && window.innerWidth < 768;
-const PERSON = isMobile
-  ? { position: new THREE.Vector3(0, -2.6, 0), scale: 0.95, rotationY: Math.PI }
-  : PERSON_TRANSFORM;
+const PLANE: Plane = isMobile
+  ? { px: 0.3, py: -1.4, w: 2.9, h: 3.9 }
+  : PERSON_PLANE;
 
 const Rig = ({ diveProgress }: { diveProgress: React.MutableRefObject<number> }) => {
   const { camera } = useThree();
   const scroll = useRef(0);
   const click = useRef({ v: 0 });
-  const count = isMobile ? 3600 : 7000;
+  const count = isMobile ? 5000 : 9000;
 
   useEffect(() => {
     camera.position.set(0, 0, 9);
-
-    // scroll over the hero also drives the dive (non-clickers still see it)
     const st = ScrollTrigger.create({
       trigger: ".hero-section",
       start: "top top",
@@ -42,12 +39,11 @@ const Rig = ({ diveProgress }: { diveProgress: React.MutableRefObject<number> })
         scroll.current = self.progress;
       },
     });
-
     const startDive = () => {
       if (click.current.v > 0.01) return;
       gsap.to(click.current, {
         v: 1,
-        duration: 2.6,
+        duration: 2.8,
         ease: "power2.inOut",
         onComplete: () => smoother?.scrollTo("#summary", true, "top top"),
       });
@@ -64,22 +60,18 @@ const Rig = ({ diveProgress }: { diveProgress: React.MutableRefObject<number> })
   useFrame(() => {
     const d = Math.max(scroll.current, click.current.v);
     diveProgress.current = d;
-    // subtle dolly-in during the dive
-    camera.position.z += (THREE.MathUtils.lerp(9, 7.6, d) - camera.position.z) * 0.08;
+    (window as unknown as { __dive?: number }).__dive = d;
+    camera.position.z += (THREE.MathUtils.lerp(9, 7.8, d) - camera.position.z) * 0.08;
   });
 
   return (
     <>
-      <ambientLight intensity={0.6} />
-      <directionalLight position={[4, 6, 6]} intensity={2.2} color="#ffffff" />
-      <directionalLight position={[-5, 2, 2]} intensity={1.6} color="#2dd4bf" />
-      <pointLight position={[2, -1, 4]} intensity={6} color="#f7a83b" distance={14} />
-      <Person
+      <PersonImage
         diveProgress={diveProgress}
-        transform={PERSON}
+        plane={PLANE}
         onDive={() => window.dispatchEvent(new Event("portfolio-dive"))}
       />
-      <PersonParticles diveProgress={diveProgress} count={count} transform={PERSON} />
+      <ImageParticles diveProgress={diveProgress} count={count} plane={PLANE} />
     </>
   );
 };
@@ -90,12 +82,12 @@ const FlashBloom = ({ diveProgress }: { diveProgress: React.MutableRefObject<num
   useFrame(() => {
     if (!ref.current) return;
     const d = diveProgress.current;
-    const flash = Math.exp(-((d - 0.5) ** 2) / 0.015) * 1.8; // bump at mid-dive
-    ref.current.intensity = 0.85 + flash;
+    const flash = Math.exp(-((d - 0.5) ** 2) / 0.02) * 1.6;
+    ref.current.intensity = 0.8 + flash;
   });
   return (
     <EffectComposer>
-      <Bloom ref={ref} intensity={0.85} luminanceThreshold={0.12} luminanceSmoothing={0.5} mipmapBlur radius={0.7} />
+      <Bloom ref={ref} intensity={0.8} luminanceThreshold={0.1} luminanceSmoothing={0.5} mipmapBlur radius={0.75} />
     </EffectComposer>
   );
 };

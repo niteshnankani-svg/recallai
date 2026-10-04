@@ -2,7 +2,7 @@
 .scene3d-container {
   position: absolute;
   inset: 0;
-  z-index: 0;
+  z-index: 1; /* above the code-rain canvas */
   pointer-events: auto; /* allow clicking the 3D person to trigger the dive */
 }
 .scene3d-container canvas {

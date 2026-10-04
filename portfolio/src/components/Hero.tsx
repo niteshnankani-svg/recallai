@@ -2,6 +2,7 @@ import { lazy, Suspense, useEffect, useState } from "react";
 import { motion } from "framer-motion";
 import { hero } from "../data/content";
 import MorphFallback from "./Scene3D/MorphFallback";
+import CodeRain from "./CodeRain";
 import "./styles/Hero.css";
 
 // Section 1 — the garment→neural-network morph sits behind the copy. We run the
@@ -30,6 +31,7 @@ const Hero = () => {
   return (
     <section className="hero-section" id="hero">
       <div className="hero-canvas">
+        <CodeRain />
         {is3D ? (
           <Suspense fallback={null}>
             <Scene3D />
