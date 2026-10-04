@@ -20,7 +20,7 @@ gsap.registerPlugin(ScrollTrigger);
 // scrolls into the site.
 const isMobile = typeof window !== "undefined" && window.innerWidth < 768;
 const PERSON = isMobile
-  ? { position: new THREE.Vector3(0, -3.0, 0), scale: 0.36 }
+  ? { position: new THREE.Vector3(0, -2.6, 0), scale: 0.95, rotationY: Math.PI }
   : PERSON_TRANSFORM;
 
 const Rig = ({ diveProgress }: { diveProgress: React.MutableRefObject<number> }) => {

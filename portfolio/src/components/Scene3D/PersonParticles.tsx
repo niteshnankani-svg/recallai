@@ -6,7 +6,7 @@ import { MeshSurfaceSampler } from "three/examples/jsm/math/MeshSurfaceSampler.j
 
 // Particles sampled from the 3D person's surface (state A) that morph into a
 // glowing neural network (state B) as the dive progresses — "human → AI".
-const MODEL = "/models/RobotExpressive.glb";
+const MODEL = "/models/Soldier.glb";
 const PERSON_COLOR = new THREE.Color("#9fe6db");
 const TEAL = new THREE.Color("#2dd4bf");
 
@@ -83,7 +83,7 @@ export default function PersonParticles({
 }: {
   diveProgress: React.MutableRefObject<number>;
   count: number;
-  transform: { position: THREE.Vector3; scale: number };
+  transform: { position: THREE.Vector3; scale: number; rotationY: number };
 }) {
   const { scene } = useGLTF(MODEL);
   const matRef = useRef<THREE.ShaderMaterial>(null);
@@ -103,7 +103,7 @@ export default function PersonParticles({
     const rands = new Float32Array(count);
     const disp = new THREE.Matrix4().compose(
       transform.position.clone(),
-      new THREE.Quaternion(),
+      new THREE.Quaternion().setFromEuler(new THREE.Euler(0, transform.rotationY, 0)),
       new THREE.Vector3(transform.scale, transform.scale, transform.scale)
     );
     const tmp = new THREE.Vector3();

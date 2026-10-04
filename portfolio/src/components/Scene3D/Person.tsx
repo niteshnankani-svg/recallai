@@ -6,11 +6,18 @@ import * as THREE from "three";
 // The visible 3D person in the hero. Idles, waves periodically, looks toward the
 // cursor, and is clickable to trigger the "dive". As the dive progresses it
 // dissolves (materials fade) while PersonParticles takes over the silhouette.
-const MODEL = "/models/RobotExpressive.glb";
+const MODEL = "/models/Soldier.glb";
 
-export const PERSON_TRANSFORM = {
-  position: new THREE.Vector3(1.9, -2.2, 0),
-  scale: 0.5,
+export interface PersonTransform {
+  position: THREE.Vector3;
+  scale: number;
+  rotationY: number;
+}
+
+export const PERSON_TRANSFORM: PersonTransform = {
+  position: new THREE.Vector3(2.0, -2.1, 0),
+  scale: 1.2,
+  rotationY: Math.PI, // face the camera
 };
 
 export default function Person({
@@ -20,7 +27,7 @@ export default function Person({
 }: {
   diveProgress: React.MutableRefObject<number>;
   onDive: () => void;
-  transform: { position: THREE.Vector3; scale: number };
+  transform: PersonTransform;
 }) {
   const group = useRef<THREE.Group>(null);
   const { scene, animations } = useGLTF(MODEL);
@@ -69,7 +76,7 @@ export default function Person({
   useFrame(() => {
     if (!group.current) return;
     const d = diveProgress.current;
-    const targetY = mouse.current.x * 0.5 * (1 - d);
+    const targetY = transform.rotationY + mouse.current.x * 0.4 * (1 - d);
     group.current.rotation.y += (targetY - group.current.rotation.y) * 0.08;
     // dissolve: fade the mesh out as the dive starts
     const op = 1 - THREE.MathUtils.clamp((d - 0.06) / 0.42, 0, 1);
@@ -82,6 +89,7 @@ export default function Person({
       ref={group}
       position={transform.position}
       scale={transform.scale}
+      rotation={[0, transform.rotationY, 0]}
       onClick={(e) => {
         e.stopPropagation();
         onDive();
