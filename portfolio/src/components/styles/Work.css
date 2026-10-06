@@ -61,6 +61,15 @@
   gap: clamp(16px, 3vw, 40px);
   padding: clamp(22px, 3vw, 34px);
   transition: transform 0.4s ease, background 0.4s ease;
+  /* rendered as a <button> now (opens the deep-dive modal) — reset UA styling */
+  appearance: none;
+  -webkit-appearance: none;
+  width: 100%;
+  text-align: left;
+  color: inherit;
+  font: inherit;
+  border: 0;
+  cursor: pointer;
 }
 .work-card:hover {
   transform: translateY(-5px) scale(1.008);

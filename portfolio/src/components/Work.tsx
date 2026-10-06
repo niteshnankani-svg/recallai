@@ -1,26 +1,35 @@
 import { useEffect, useRef, useState } from "react";
 import { MdArrowOutward } from "react-icons/md";
-import { FaGithub } from "react-icons/fa";
 import gsap from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
 import { projects, Project } from "../data/projects";
 import PipelineDiagram from "./PipelineDiagram";
+import ProjectModal from "./ProjectModal";
 import "./styles/Work.css";
 
 gsap.registerPlugin(ScrollTrigger);
 
 // Section 4 — "What I Built" (the centerpiece). Glass cards, staggered scroll
 // reveal (reference Work.tsx pattern), and on hover each card's architecture
-// line animates as a flowing pipeline (see PipelineDiagram).
-const ProjectCard = ({ project, index }: { project: Project; index: number }) => {
+// line animates as a flowing pipeline (see PipelineDiagram). Clicking a card
+// opens a deep-dive modal with the full story + metrics.
+const ProjectCard = ({
+  project,
+  index,
+  onOpen,
+}: {
+  project: Project;
+  index: number;
+  onOpen: () => void;
+}) => {
   const [hover, setHover] = useState(false);
   return (
-    <a
+    <button
+      type="button"
       className="glass work-card"
-      href={project.link}
-      target="_blank"
-      rel="noreferrer"
       data-cursor="disable"
+      aria-label={`${project.title} — view details`}
+      onClick={onOpen}
       onMouseEnter={() => setHover(true)}
       onMouseLeave={() => setHover(false)}
     >
@@ -40,19 +49,7 @@ const ProjectCard = ({ project, index }: { project: Project; index: number }) =>
         <p className="work-card-blurb">{project.blurb}</p>
         <PipelineDiagram nodes={project.pipeline} active={hover} />
       </div>
-      {project.github && (
-        <span
-          className="work-card-github"
-          onClick={(e) => {
-            e.preventDefault();
-            window.open(project.github, "_blank", "noreferrer");
-          }}
-          aria-label={`${project.title} source on GitHub`}
-        >
-          <FaGithub />
-        </span>
-      )}
-    </a>
+    </button>
   );
 };
 
@@ -60,6 +57,7 @@ const Work = () => {
   const rootRef = useRef<HTMLDivElement>(null);
   const listRef = useRef<HTMLDivElement>(null);
   const introRef = useRef<HTMLDivElement>(null);
+  const [active, setActive] = useState<number | null>(null);
 
   useEffect(() => {
     if (!rootRef.current || !listRef.current) return;
@@ -125,10 +123,21 @@ const Work = () => {
 
         <div className="work-list" ref={listRef}>
           {projects.map((project, index) => (
-            <ProjectCard project={project} index={index} key={project.id} />
+            <ProjectCard
+              project={project}
+              index={index}
+              key={project.id}
+              onOpen={() => setActive(index)}
+            />
           ))}
         </div>
       </div>
+
+      <ProjectModal
+        project={active !== null ? projects[active] : null}
+        index={active ?? 0}
+        onClose={() => setActive(null)}
+      />
     </section>
   );
 };
