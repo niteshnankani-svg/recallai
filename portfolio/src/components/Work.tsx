@@ -24,7 +24,14 @@ const ProjectCard = ({ project, index }: { project: Project; index: number }) =>
       onMouseEnter={() => setHover(true)}
       onMouseLeave={() => setHover(false)}
     >
-      <div className="work-card-index">0{index + 1}</div>
+      <div className="work-card-index">
+        0{index + 1}
+        <span
+          className={`work-card-status ${project.production ? "is-live" : "is-built"}`}
+        >
+          {project.production ? "Live" : "Built"}
+        </span>
+      </div>
       <div className="work-card-body">
         <h3 className="work-card-title font-head">
           {project.title}
@@ -105,10 +112,14 @@ const Work = () => {
         <div className="work-intro" ref={introRef}>
           <span className="section-kicker">What I Built</span>
           <h2 className="work-heading title font-head">
-            Six systems, <span className="grad-text">in production</span>
+            Nine systems, <span className="grad-text">six in production</span>
           </h2>
           <p className="work-sub">
             Hover any project to trace its architecture — each one is clickable.
+            <span className="work-sub-legend">
+              <span className="dot is-live" /> live in production
+              <span className="dot is-built" /> built &amp; evaluated
+            </span>
           </p>
         </div>
 

@@ -45,13 +45,14 @@
     margin-bottom: 0;
     max-width: 340px;
   }
-  /* Generous vertical rhythm so the list column is tall: the intro stays
-     pinned across a longer scroll and each card gets its own distinct
-     entrance one-by-one, rather than all six flashing in at once. */
+  /* Vertical rhythm tuned for nine cards: the intro stays pinned across a
+     long scroll and each system gets its own distinct entrance one-by-one.
+     (Gaps are a touch tighter than the six-card version since there's more
+     content, so the section doesn't become excessively tall.) */
   .work-list {
-    padding-top: clamp(60px, 18vh, 200px);
-    padding-bottom: clamp(48px, 11vh, 140px);
-    gap: clamp(48px, 11vh, 150px);
+    padding-top: clamp(60px, 16vh, 180px);
+    padding-bottom: clamp(48px, 10vh, 130px);
+    gap: clamp(40px, 8vh, 104px);
   }
 }
 .work-card {
@@ -72,7 +73,71 @@
   color: var(--teal);
   font-variant-numeric: tabular-nums;
   padding-top: 6px;
-  min-width: 30px;
+  min-width: 56px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+/* live / built status pill under the index */
+.work-card-status {
+  font-family: var(--font-body);
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  padding: 3px 8px;
+  border-radius: 999px;
+  width: fit-content;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+}
+.work-card-status::before {
+  content: "";
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+}
+.work-card-status.is-live {
+  color: var(--teal);
+  background: rgba(45, 212, 191, 0.1);
+  border: 1px solid rgba(45, 212, 191, 0.3);
+}
+.work-card-status.is-live::before {
+  background: var(--teal);
+  box-shadow: 0 0 8px 1px rgba(45, 212, 191, 0.8);
+}
+.work-card-status.is-built {
+  color: var(--text-dim);
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid var(--border);
+}
+.work-card-status.is-built::before {
+  background: var(--text-dim);
+}
+/* legend under the intro sub-line */
+.work-sub-legend {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 14px;
+  margin-top: 16px;
+  font-size: clamp(12px, 1.2vw, 14px);
+  color: var(--text-dim);
+}
+.work-sub-legend .dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  display: inline-block;
+  margin-right: 2px;
+}
+.work-sub-legend .dot.is-live {
+  background: var(--teal);
+  box-shadow: 0 0 8px 1px rgba(45, 212, 191, 0.7);
+}
+.work-sub-legend .dot.is-built {
+  background: var(--text-dim);
 }
 .work-card-body {
   flex: 1;

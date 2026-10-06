@@ -5,10 +5,10 @@ import "./styles/Stats.css";
 // A band of count-up stats — concrete numbers recruiters scan for. Counts up when
 // scrolled into view (framer-motion).
 const STATS = [
-  { to: 6, suffix: "", label: "production systems" },
+  { to: 9, suffix: "", label: "systems built end-to-end" },
+  { to: 6, suffix: "", label: "live in production" },
   { to: 7, suffix: "", label: "BERT models fine-tuned" },
-  { to: 69758, suffix: "", label: "tickets trained on" },
-  { to: 99, suffix: "%", label: "peak model accuracy" },
+  { to: 51000, suffix: "", label: "reviews trained on" },
   { to: 12, suffix: "+", label: "yrs running businesses" },
 ];
 

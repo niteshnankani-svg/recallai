@@ -7,31 +7,77 @@ export interface SkillGroup {
 
 export const skillGroups: SkillGroup[] = [
   {
-    title: "Voice AI Stack",
-    items: ["Twilio", "Deepgram (STT)", "Sarvam AI (Hindi TTS)", "ElevenLabs", "Whisper"],
+    title: "Languages",
+    items: ["Python", "SQL"],
   },
   {
-    title: "LLM & Agents",
-    items: ["Claude", "Amazon Bedrock", "GPT-4o", "LLaMA 3.1 (Groq)", "LangChain", "CrewAI", "LangGraph", "Function Calling"],
+    title: "Agent & LLM Frameworks",
+    items: [
+      "LangGraph (supervisor-router)",
+      "interrupt() escalation",
+      "checkpointing",
+      "CrewAI",
+      "PageIndex",
+      "PipeCat",
+    ],
   },
   {
-    title: "Indian-Language NLP",
-    items: ["MuRIL embeddings", "Hinglish code-switching", "Hindi STT/TTS pipelines", "BERT fine-tuning"],
+    title: "Models",
+    items: [
+      "Claude (Sonnet · Haiku · Bedrock)",
+      "GPT-4o",
+      "BERT / DistilBERT (fine-tuned)",
+      "MuRIL (multilingual intent)",
+      "Qwen 0.5B (fine-tuned)",
+      "Jev (hosted classifier)",
+    ],
   },
   {
-    title: "RAG & Memory",
-    items: ["ChromaDB", "FAISS", "Redis caching", "Hierarchical RAG", "Retrieval pipelines"],
+    title: "Retrieval & Storage",
+    items: [
+      "ChromaDB",
+      "BERT re-ranking",
+      "PageIndex (hierarchical)",
+      "SQLite",
+      "semantic caching",
+    ],
   },
   {
-    title: "Cloud & AWS",
-    items: ["AWS EC2", "S3", "CloudFront", "Amazon Bedrock", "Security Groups", "AWS CLI"],
+    title: "Evaluation & Safety",
+    items: [
+      "DeepEval",
+      "golden test sets",
+      "LLM-as-judge",
+      "macro-F1 · latency · pass@k",
+      "label-quality audits",
+      "prompt-injection testing",
+      "output guardrails",
+    ],
   },
   {
-    title: "Backend & Deployment",
-    items: ["FastAPI", "Docker", "Redis", "SQLite", "WebSockets", "REST APIs"],
+    title: "Cloud & Deployment",
+    items: [
+      "AWS (ECS Fargate · EC2 · S3 · CloudFront · Bedrock)",
+      "Azure",
+      "Railway",
+      "Vercel",
+      "HuggingFace Spaces",
+    ],
   },
   {
-    title: "ML & Fine-tuning",
-    items: ["BERT (7 models fine-tuned)", "HuggingFace Transformers", "scikit-learn", "PyTorch"],
+    title: "Integrations & APIs",
+    items: [
+      "Twilio",
+      "Deepgram",
+      "ElevenLabs · Whisper",
+      "Sarvam AI",
+      "Shopify API & webhooks",
+      "Apify · UN Comtrade",
+      "REST (CSRF-token flows)",
+    ],
+  },
+  {
+    title: "Analytics",
+    items: ["Power BI", "Tableau", "Shopify Analytics", "Meta Ads Manager"],
   },
 ];

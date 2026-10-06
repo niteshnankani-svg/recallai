@@ -18,6 +18,16 @@ const Education = () => {
             </div>
           ))}
         </div>
+        {education.certs && education.certs.length > 0 && (
+          <div className="edu-certs">
+            <h4 className="edu-certs-title">Certifications</h4>
+            <ul className="edu-certs-list">
+              {education.certs.map((cert) => (
+                <li key={cert}>{cert}</li>
+              ))}
+            </ul>
+          </div>
+        )}
       </div>
     </section>
   );
