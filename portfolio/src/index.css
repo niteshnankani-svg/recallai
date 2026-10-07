@@ -30,8 +30,20 @@
   --text-muted: #a6adbb;
   --text-dim: #767d8c;
 
+  /* One variable typeface throughout (Plus Jakarta Sans, 200–800) so the type
+     reads as a single system and doesn't change per-OS the way system-ui does.
+     Hierarchy comes from weight + size + tracking, not from a second family. */
   --font-head: "Plus Jakarta Sans", system-ui, -apple-system, sans-serif;
-  --font-body: system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  --font-body: "Plus Jakarta Sans", system-ui, -apple-system, "Segoe UI", Roboto,
+    Helvetica, Arial, sans-serif;
+
+  /* Proportional (em) tracking scale — tightens as type grows, loosens for
+     labels — so headings read right at every size instead of being over-tight
+     on mobile and under-tight on desktop (fixed-px tracking can't do both). */
+  --track-display: -0.025em; /* hero / contact mega headings */
+  --track-head: -0.018em; /* section headings */
+  --track-tight: -0.01em; /* sub-headings, card titles */
+  --track-label: 0.18em; /* uppercase kickers / eyebrows */
 
   --cWidth: 88%;
   --cMaxWidth: 1240px;
@@ -62,9 +74,14 @@ body {
   color: var(--text);
   font-family: var(--font-body);
   font-size: 16px;
-  line-height: 1.5;
+  line-height: 1.6;
+  font-weight: 400;
   -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
   text-rendering: optimizeLegibility;
+  font-optical-sizing: auto;
+  font-feature-settings: "kern" 1, "liga" 1, "calt" 1;
+  font-kerning: normal;
   overflow-y: hidden; /* released by initialFX after load */
   cursor: none;
 }
@@ -188,6 +205,90 @@ h1, h2, h3, h4, p {
 ::selection {
   background: var(--teal);
   color: #05130f;
+}
+
+/* ============================================================
+   Typography pass
+   - proportional (em) tracking on display headings
+   - balanced heading wraps, tidy paragraph rag (no orphans)
+   - unified gradient accent on section-heading highlights
+   ============================================================ */
+
+/* Display + section headings: tracking that scales with size, and line breaks
+   balanced across lines so no single word is left stranded. */
+.hero-name h1 {
+  letter-spacing: var(--track-display);
+}
+.contact-title {
+  letter-spacing: var(--track-display);
+}
+.work-heading {
+  letter-spacing: var(--track-head);
+}
+.skills-heading,
+.xp-heading,
+.pivot-line {
+  letter-spacing: var(--track-head);
+}
+.pm-title,
+.work-card-title,
+.skill-card-title {
+  letter-spacing: var(--track-tight);
+}
+.section-kicker,
+.hero-eyebrow {
+  letter-spacing: var(--track-label);
+}
+
+h1,
+h2,
+h3,
+.title,
+.font-head,
+.pm-title,
+.work-card-title,
+.hero-name h1,
+.contact-title,
+.pivot-line {
+  text-wrap: balance;
+}
+
+/* Body copy: "pretty" rag prevents a lone last-line word (widow/orphan). */
+p,
+.para,
+.story-body,
+.summary-body,
+.howiwork-body,
+.work-card-blurb,
+.pm-overview,
+.pm-highlights li,
+.xp-points li,
+.skill-card-list li,
+.edu-certs-list li,
+.contact-lead,
+.hero-sub {
+  text-wrap: pretty;
+}
+
+/* Tabular figures wherever numbers sit in a row/line so they stay aligned. */
+.stat-num,
+.xp-period,
+.edu-period,
+.pm-index,
+.work-card-index {
+  font-variant-numeric: tabular-nums;
+}
+
+/* Unify the section-heading accent: skills/experience used a flat teal span
+   while Work used the animated gradient — give them all the gradient. */
+.skills-heading span,
+.xp-heading span {
+  background: linear-gradient(105deg, var(--teal), var(--amber), var(--teal));
+  background-size: 220% auto;
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  animation: gradShimmer 6s linear infinite;
 }
 
 /* ---- section polish pass ---- */
