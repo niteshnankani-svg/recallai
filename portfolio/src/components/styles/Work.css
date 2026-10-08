@@ -1,0 +1,206 @@
+.work-section {
+  position: relative;
+  z-index: 3;
+  width: 100%;
+  padding: clamp(80px, 13vh, 170px) 0;
+  display: flex;
+  justify-content: center;
+}
+.work-container {
+  width: var(--cWidth);
+  max-width: var(--cMaxWidth);
+}
+.work-heading {
+  font-size: clamp(34px, 6vw, 76px);
+  font-weight: 800;
+  letter-spacing: -1.5px;
+  margin-top: 14px;
+}
+.work-sub {
+  color: var(--text-muted);
+  font-size: clamp(14px, 1.5vw, 18px);
+  margin-top: 14px;
+  margin-bottom: 44px;
+}
+.work-list {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+
+/* Desktop: two columns — the intro pins (via GSAP) in the left rail while the
+   project list scrolls past on the right. Below 1024px it's a single column
+   with no pin (set in Work.tsx). */
+@media screen and (min-width: 1025px) {
+  .work-container {
+    display: grid;
+    grid-template-columns: minmax(300px, 38%) 1fr;
+    gap: clamp(32px, 4vw, 64px);
+    align-items: start;
+  }
+  .work-intro {
+    padding-top: clamp(40px, 12vh, 120px);
+  }
+  .work-sub {
+    margin-bottom: 0;
+    max-width: 340px;
+  }
+  /* Vertical rhythm tuned for nine cards: the intro stays pinned across a
+     long scroll and each system gets its own distinct entrance one-by-one.
+     (Gaps are a touch tighter than the six-card version since there's more
+     content, so the section doesn't become excessively tall.) */
+  .work-list {
+    padding-top: clamp(60px, 16vh, 180px);
+    padding-bottom: clamp(48px, 10vh, 130px);
+    gap: clamp(40px, 8vh, 104px);
+  }
+}
+.work-card {
+  display: flex;
+  align-items: flex-start;
+  gap: clamp(16px, 3vw, 40px);
+  padding: clamp(22px, 3vw, 34px);
+  transition: transform 0.4s ease, background 0.4s ease;
+  /* rendered as a <button> now (opens the deep-dive modal) — reset UA styling */
+  appearance: none;
+  -webkit-appearance: none;
+  width: 100%;
+  text-align: left;
+  color: inherit;
+  font: inherit;
+  border: 0;
+  cursor: pointer;
+}
+.work-card:hover {
+  transform: translateY(-5px) scale(1.008);
+  background: var(--panel-strong);
+}
+.work-card-index {
+  font-family: var(--font-head);
+  font-size: clamp(14px, 1.4vw, 17px);
+  font-weight: 700;
+  color: var(--teal);
+  font-variant-numeric: tabular-nums;
+  padding-top: 6px;
+  min-width: 56px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+/* live / built status pill under the index */
+.work-card-status {
+  font-family: var(--font-body);
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  padding: 3px 8px;
+  border-radius: 999px;
+  width: fit-content;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+}
+.work-card-status::before {
+  content: "";
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+}
+.work-card-status.is-live {
+  color: var(--teal);
+  background: rgba(45, 212, 191, 0.1);
+  border: 1px solid rgba(45, 212, 191, 0.3);
+}
+.work-card-status.is-live::before {
+  background: var(--teal);
+  box-shadow: 0 0 8px 1px rgba(45, 212, 191, 0.8);
+}
+.work-card-status.is-built {
+  color: var(--text-dim);
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid var(--border);
+}
+.work-card-status.is-built::before {
+  background: var(--text-dim);
+}
+/* legend under the intro sub-line */
+.work-sub-legend {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 14px;
+  margin-top: 16px;
+  font-size: clamp(12px, 1.2vw, 14px);
+  color: var(--text-dim);
+}
+.work-sub-legend .dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  display: inline-block;
+  margin-right: 2px;
+}
+.work-sub-legend .dot.is-live {
+  background: var(--teal);
+  box-shadow: 0 0 8px 1px rgba(45, 212, 191, 0.7);
+}
+.work-sub-legend .dot.is-built {
+  background: var(--text-dim);
+}
+.work-card-body {
+  flex: 1;
+  min-width: 0;
+}
+.work-card-title {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: clamp(22px, 3vw, 38px);
+  font-weight: 700;
+  letter-spacing: -0.5px;
+  transition: color 0.3s ease;
+}
+.work-card:hover .work-card-title {
+  color: #fff;
+}
+.work-card-arrow {
+  font-size: 0.65em;
+  color: var(--teal);
+  opacity: 0;
+  transform: translate(-8px, 8px);
+  transition: all 0.35s ease;
+}
+.work-card:hover .work-card-arrow {
+  opacity: 1;
+  transform: translate(0, 0);
+}
+.work-card-blurb {
+  margin-top: 10px;
+  max-width: 640px;
+  color: var(--text-muted);
+  font-size: clamp(14px, 1.5vw, 18px);
+  line-height: 1.5;
+}
+.work-card:hover .work-card-blurb {
+  color: var(--text);
+}
+.work-card-github {
+  align-self: center;
+  font-size: 22px;
+  color: var(--text-dim);
+  padding: 10px;
+  transition: color 0.3s ease, transform 0.3s ease;
+}
+.work-card-github:hover {
+  color: var(--teal);
+  transform: scale(1.15);
+}
+@media screen and (max-width: 600px) {
+  .work-card {
+    flex-wrap: wrap;
+  }
+  .work-card-github {
+    align-self: flex-start;
+  }
+}

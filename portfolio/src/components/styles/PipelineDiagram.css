@@ -1,0 +1,70 @@
+.pipe {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0;
+  margin-top: 18px;
+}
+.pipe-step {
+  display: inline-flex;
+  align-items: center;
+}
+.pipe-node {
+  --lit: 0;
+  font-family: var(--font-head);
+  font-size: clamp(11px, 1.15vw, 13px);
+  font-weight: 600;
+  letter-spacing: 0.2px;
+  white-space: nowrap;
+  padding: 7px 13px;
+  border-radius: 999px;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  background: rgba(255, 255, 255, 0.03);
+  color: color-mix(in srgb, var(--text-muted), #fff calc(var(--lit) * 100%));
+}
+.pipe-conn {
+  position: relative;
+  width: clamp(18px, 3vw, 42px);
+  height: 2px;
+  margin: 0 4px;
+  background: rgba(255, 255, 255, 0.12);
+  border-radius: 2px;
+  overflow: hidden;
+}
+.pipe-conn-fill {
+  position: absolute;
+  inset: 0;
+  transform: scaleX(0);
+  transform-origin: left center;
+  background: var(--accent);
+  box-shadow: 0 0 8px var(--accent);
+}
+/* continuous data pulse traveling along every connector */
+.pipe-conn-pulse {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 45%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, var(--accent), transparent);
+  opacity: 0.9;
+  animation: pipeFlow 2.2s linear infinite;
+}
+@keyframes pipeFlow {
+  0% { transform: translateX(-130%); opacity: 0; }
+  25% { opacity: 1; }
+  75% { opacity: 1; }
+  100% { transform: translateX(330%); opacity: 0; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .pipe-conn-pulse {
+    animation: none;
+    opacity: 0;
+  }
+}
+@media screen and (max-width: 600px) {
+  .pipe {
+    gap: 6px 0;
+  }
+}
