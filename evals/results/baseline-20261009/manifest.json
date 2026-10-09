@@ -1,0 +1,78 @@
+{
+  "started_utc": "2026-10-09T11:34:24.960497+00:00",
+  "git_rev": "f5e2444",
+  "layers": [
+    "A",
+    "B",
+    "C",
+    "D",
+    "E",
+    "F",
+    "G"
+  ],
+  "runs_per_item": 5,
+  "python": "3.14.7",
+  "platform": "macOS-26.3-arm64-arm-64bit-Mach-O",
+  "system_under_test": {
+    "hot_model": "claude-haiku-4-5-20251001",
+    "max_tokens": 120,
+    "temperature": 0.75,
+    "extract_model": "claude-haiku-4-5-20251001"
+  },
+  "judge_model": "claude-sonnet-5-5",
+  "deps": {
+    "anthropic": "0.105.2",
+    "chromadb": "1.5.9",
+    "transformers": "5.9.0"
+  },
+  "deps_deviation": "PRODUCTION PINS chromadb==0.5.0 and transformers==4.41.2 (requirements.txt); this run used chromadb 1.5.9 / transformers 5.9.0 because the project venv's torch install is broken. Layer B filter semantics are therefore measured on a DIFFERENT major version of ChromaDB than is deployed.",
+  "isolation": {
+    "chroma_persist_dir": "/Users/apple/recallai/evals/.chroma_eval",
+    "real_chroma_dir_untouched": "/Users/apple/recallai/data/chromadb",
+    "redis_url": "<unset: in-memory fallback>"
+  },
+  "holdout_items": {
+    "A": 0,
+    "B": 0,
+    "C": 0,
+    "D": 0,
+    "E": 0,
+    "F": 0,
+    "G": 0
+  },
+  "guards_clean": true,
+  "seeding": {
+    "wiped": 30,
+    "seeded_docs": 30,
+    "collection_count": 30
+  },
+  "finished_utc": "2026-10-09T11:53:27.425372+00:00",
+  "wall_seconds": 1154.9,
+  "row_counts": {
+    "A:ok": 130,
+    "B:ok": 15,
+    "C:ok": 8,
+    "C:INVALID": 2,
+    "D:ok": 12,
+    "E:ok": 70,
+    "F:ok": 36,
+    "G:ok": 23
+  },
+  "invalid_runs": [
+    {
+      "layer": "C",
+      "item_id": "C-LONG-01",
+      "reason": "judge unavailable: judge returned no JSON: "
+    },
+    {
+      "layer": "C",
+      "item_id": "C-CRISIS-01",
+      "reason": "judge unavailable: judge returned no JSON: "
+    }
+  ],
+  "token_totals_system_under_test": {
+    "haiku_in": 498647,
+    "haiku_out": 12235
+  },
+  "guards_clean_after": true
+}

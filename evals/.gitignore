@@ -1,0 +1,3 @@
+# patterns here are relative to evals/, not the repo root
+.venv/
+.chroma_eval/
